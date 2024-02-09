@@ -6,17 +6,15 @@
 // Typedefs ---------------------------------------------------------------------------------------
 // Statics, Externs & Globals ---------------------------------------------------------------------
 static RCCRegistersStruct* pstTheRCCController = NULL;
-static BOOL bRCCInitialized = FALSE;
 
 // Functions --------------------------------------------------------------------------------------
 BOOL RCC_Initialize()
 {
-   if(!bRCCInitialized)
+   if(pstTheRCCController == NULL)
    {
       pstTheRCCController = GetRCCController();
-      bRCCInitialized = (pstTheRCCController != NULL);
    }
-   return bRCCInitialized;
+   return TRUE;
 }
 
 BOOL RCC_EnablePeripheralClock(

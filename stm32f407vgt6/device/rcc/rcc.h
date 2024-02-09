@@ -98,20 +98,31 @@ typedef volatile struct
    UINT AHB1RSTR;       // AHB1 peripheral reset
    UINT AHB2RSTR;       // AHB2 peripheral reset
    UINT AHB3RSTR;       // AHB3 peripheral reset
+   UINT RESERVED1;
    UINT APB1RSTR;       // APB1 peripheral reset
    UINT APB2RSTR;       // APB2 peripheral reset
+   UINT RESERVED2;
+   UINT RESERVED3;
    UINT AHB1ENR;        // AHB1 peripheral clock enable
    UINT AHB2ENR;        // AHB2 peripheral clock enable
    UINT AHB3ENR;        // AHB3 peripheral clock enable
+   UINT RESERVED4;
    UINT APB1ENR;        // APB1 peripheral clock enable
    UINT APB2ENR;        // APB2 peripheral clock enable
+   UINT RESERVED5;
+   UINT RESERVED6;
    UINT AHB1LPENR;      // AHB1 peripheral clock low-power enable
    UINT AHB2LPENR;      // AHB2 peripheral clock low-power enable
    UINT AHB3LPENR;      // AHB3 peripheral clock low-power enable
+   UINT RESERVED7;
    UINT APB1LPENR;      // APB1 peripheral clock low-power enable
    UINT APB2LPENR;      // APB2 peripheral clock low-power enable
+   UINT RESERVED8;
+   UINT RESERVED9;
    UINT BDCR;           // Backup domain control
    UINT CSR;            // Clock control & status
+   UINT RESERVED10;
+   UINT RESERVED11;
    UINT SSCGR;          // Spread spectrum clock generation
    UINT PLLI2SCFGR;     // PLLI2S configuration
 } RCCRegistersStruct;
