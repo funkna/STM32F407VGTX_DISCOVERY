@@ -255,7 +255,7 @@ BOOL GPIO_ReadPin(
       return FALSE;
    }
 
-   *peState_ = ((*apstTheGPIOControllers[eGPIOController_]).ODR >> ePin_) & GPIO_HI;
+   *peState_ = ((*apstTheGPIOControllers[eGPIOController_]).IDR >> ePin_) & GPIO_HI;
 
    return TRUE;
 }
