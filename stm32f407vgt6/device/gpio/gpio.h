@@ -19,16 +19,16 @@
 // -------------------------------------------------------------
 typedef volatile struct
 {
-   UINT MODER;
-   UINT OTYPER;
-   UINT OSPEEDR;
-   UINT PUPDR;
-   UINT IDR;
-   UINT ODR;
-   UINT BSRR;
-   UINT LCKR;
-   UINT AFRL;
-   UINT AFRH;
+   UINT MODER;       // Mode
+   UINT OTYPER;      // Output Type
+   UINT OSPEEDR;     // Output Speed
+   UINT PUPDR;       // Pull-Up/Pull-Down
+   UINT IDR;         // Input Data
+   UINT ODR;         // Output Data
+   UINT BSRR;        // Bit Set/Reset
+   UINT LCKR;        // Configuration Lock
+   UINT AFRL;        // Alternate Function Low
+   UINT AFRH;        // Alternate Function High
 } GPIORegistersStruct;
 
 // Functions --------------------------------------------------------------------------------------

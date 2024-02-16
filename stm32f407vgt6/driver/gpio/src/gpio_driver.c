@@ -57,7 +57,8 @@ BOOL GPIO_Initialize(
       if((apstTheGPIOControllers[eGPIOController_] == NULL) ||
          (!RCC_EnablePeripheralClock(ePeripheral)))
       {
-         return GPIO_Deinitialize(eGPIOController_);
+         (void)GPIO_Deinitialize(eGPIOController_);
+         return FALSE;
       }
    }
    return TRUE;
@@ -68,6 +69,7 @@ BOOL GPIO_Deinitialize(
    GPIOControllerEnum eGPIOController_)
 {
    STM32F407VGT6_PeriperalEnum ePeripheral = GPIOEnumToSTM32Enum(eGPIOController_);
+   apstTheGPIOControllers[eGPIOController_] = NULL;
    return RCC_ResetPeripheralClock(ePeripheral);
 }
 
