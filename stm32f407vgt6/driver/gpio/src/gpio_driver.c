@@ -72,6 +72,46 @@ BOOL GPIO_Deinitialize(
 }
 
 // -------------------------------------------------------------
+BOOL GPIO_SetConfig(
+   GPIOControllerEnum eGPIOController_,
+   GPIOPinEnum ePin_,
+   GPIOPinConfigurationStruct* pstConfiguration_)
+{
+   if((apstTheGPIOControllers[eGPIOController_] == NULL) ||
+      (pstConfiguration_ == NULL))
+   {
+      return FALSE;
+   }
+
+   BOOL bSuccess = TRUE;
+   bSuccess &= GPIO_SetConfigPinMode(eGPIOController_, ePin_, pstConfiguration_->eMode);
+   bSuccess &= GPIO_SetConfigPinOutputType(eGPIOController_, ePin_, pstConfiguration_->eOutputType);
+   bSuccess &= GPIO_SetConfigPinSpeed(eGPIOController_, ePin_, pstConfiguration_->eSpeed);
+   bSuccess &= GPIO_SetConfigPinPUPD(eGPIOController_, ePin_, pstConfiguration_->ePUPD);
+   return bSuccess;
+}
+
+// -------------------------------------------------------------
+BOOL GPIO_GetConfig(
+   GPIOControllerEnum eGPIOController_,
+   GPIOPinEnum ePin_,
+   GPIOPinConfigurationStruct* pstConfiguration_)
+{
+   if((apstTheGPIOControllers[eGPIOController_] == NULL) ||
+      (pstConfiguration_ == NULL))
+   {
+      return FALSE;
+   }
+
+   BOOL bSuccess = TRUE;
+   bSuccess &= GPIO_GetConfigPinMode(eGPIOController_, ePin_, &pstConfiguration_->eMode);
+   bSuccess &= GPIO_GetConfigPinOutputType(eGPIOController_, ePin_, &pstConfiguration_->eOutputType);
+   bSuccess &= GPIO_GetConfigPinSpeed(eGPIOController_, ePin_, &pstConfiguration_->eSpeed);
+   bSuccess &= GPIO_GetConfigPinPUPD(eGPIOController_, ePin_, &pstConfiguration_->ePUPD);
+   return bSuccess;
+}
+
+// -------------------------------------------------------------
 BOOL GPIO_SetConfigPinMode(
    GPIOControllerEnum eGPIOController_,
    GPIOPinEnum ePin_,

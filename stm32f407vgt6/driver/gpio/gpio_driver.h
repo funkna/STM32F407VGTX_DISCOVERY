@@ -38,7 +38,9 @@ typedef enum
    GPIO_PIN_12,
    GPIO_PIN_13,
    GPIO_PIN_14,
-   GPIO_PIN_15
+   GPIO_PIN_15,
+   GPIO_PIN_MAX,
+   GPIO_PIN_NONE= 0xFFFFFFFF
 } GPIOPinEnum;
 
 // -------------------------------------------------------------
@@ -96,7 +98,7 @@ typedef struct
 // -------------------------------------------------------------
 // GPIO Port has 16 pins, so USHORT will suffice.
 // -------------------------------------------------------------
-typedef USHORT GPIOPortState;
+// typedef USHORT GPIOPortState;
 
 // Functions --------------------------------------------------------------------------------------
 
@@ -113,7 +115,17 @@ BOOL GPIO_Deinitialize(
    GPIOControllerEnum eGPIOController_);
 
 // -------------------------------------------------------------
-// Set/Get configurations for a GPIO pin at once.
+// Set/Get configurations for a GPIO pin.
+// -------------------------------------------------------------
+BOOL GPIO_SetConfig(
+   GPIOControllerEnum eGPIOController_,
+   GPIOPinEnum ePin_,
+   GPIOPinConfigurationStruct* pstConfiguration_);
+// -------------------------------------------------------------
+BOOL GPIO_GetConfig(
+   GPIOControllerEnum eGPIOController_,
+   GPIOPinEnum ePin_,
+   GPIOPinConfigurationStruct* pstConfiguration_);
 // -------------------------------------------------------------
 BOOL GPIO_SetConfigPinMode(
    GPIOControllerEnum eGPIOController_,
