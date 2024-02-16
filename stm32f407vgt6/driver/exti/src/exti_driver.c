@@ -22,7 +22,7 @@ BOOL EXTI_Initialize()
 BOOL EXTI_EnableInterrupt(
    GPIOControllerEnum eController_,
    GPIOPinEnum ePin_,
-   EXTIModeEnum eMode_)
+   EXTITriggerEnum eMode_)
 {
    BOOL bSuccess = FALSE;
    if(pstTheEXTIController != NULL)
@@ -62,4 +62,16 @@ BOOL EXTI_DisableInterrupt(
    GPIOPinEnum ePin_)
 {
    return EXTI_EnableInterrupt(eController_, ePin_, EXTI_TRIGGER_NONE);
+}
+
+//--------------------------------------------------------------
+BOOL EXTI_ClearPendingInterrupt(
+   GPIOPinEnum ePin_)
+{
+   if(pstTheEXTIController != NULL)
+   {
+      pstTheEXTIController->PR |= (1UL << ePin_);
+      return TRUE;
+   }
+   return FALSE;
 }

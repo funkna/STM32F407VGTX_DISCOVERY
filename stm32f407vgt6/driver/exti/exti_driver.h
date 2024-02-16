@@ -14,7 +14,7 @@ typedef enum
    EXTI_TRIGGER_FALL,
    EXTI_TRIGGER_BOTH,
    EXTI_TRIGGER_NONE
-} EXTIModeEnum;
+} EXTITriggerEnum;
 
 // Functions --------------------------------------------------------------------------------------
 
@@ -29,13 +29,19 @@ BOOL EXTI_Initialize();
 BOOL EXTI_EnableInterrupt(
    GPIOControllerEnum eController_,
    GPIOPinEnum ePin_,
-   EXTIModeEnum eMode_);
+   EXTITriggerEnum eMode_);
 
 // -------------------------------------------------------------
 // Disable an EXTI interrupt for a GPIO pin.
 // -------------------------------------------------------------
 BOOL EXTI_DisableInterrupt(
    GPIOControllerEnum eController_,
+   GPIOPinEnum ePin_);
+
+// -------------------------------------------------------------
+// Clear the pending EXTI interrupt for a GPIO pin.
+// -------------------------------------------------------------
+BOOL EXTI_ClearPendingInterrupt(
    GPIOPinEnum ePin_);
 
 #endif // EXTI_DRIVER_H_

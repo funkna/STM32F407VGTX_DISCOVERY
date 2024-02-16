@@ -1,6 +1,11 @@
 // Includes ---------------------------------------------------------------------------------------
 #include "led/led.h"
 #include "button/button.h"
+
+#include "driver/cortex-m4/nvic/nvic_driver.h"
+#include "driver/exti/exti_driver.h"
+#include "driver/syscfg/syscfg_driver.h"
+
 #include "user_app_1/user_app_1.h"
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -8,13 +13,20 @@ static UINT uiCounter = 0;
 static const UINT uiMAX_COUNT = 0x10000;
 
 // Functions --------------------------------------------------------------------------------------
-BOOL Initialize_UserApp1()
-{
-   BOOL bSuccess = TRUE;
 
-   return bSuccess;
+// -------------------------------------------------------------
+static void ButtonPressCallback(void)
+{
+   LED_Toggle(LED_RED);
 }
 
+// -------------------------------------------------------------
+BOOL Initialize_UserApp1()
+{
+   return Button_ConfigureAsInterrupt(BUTTON_PRESS, &ButtonPressCallback);
+}
+
+// -------------------------------------------------------------
 void Run_UserApp1()
 {
    uiCounter++;
@@ -23,17 +35,9 @@ void Run_UserApp1()
       uiCounter = 0;
       LED_Toggle(LED_GREEN);
    }
-
-   if(Button_IsPressed(BUTTON_USER))
-   {
-      LED_On(LED_BLUE);
-   }
-   else
-   {
-      LED_Off(LED_BLUE);
-   }
 }
 
+// -------------------------------------------------------------
 BOOL Exit_UserApp1()
 {
    BOOL bSuccess = TRUE;

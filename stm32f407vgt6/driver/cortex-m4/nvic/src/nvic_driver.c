@@ -21,27 +21,24 @@ BOOL NVIC_Initialize()
 
 // -------------------------------------------------------------
 BOOL NVIC_ConfigureInterrupt(
-   UCHAR ucIRQNumber_,
-   UCHAR ucIRQPriority_,
+   IRQVectorEnum eIRQNumber_,
+   IRQPriorityEnum eIRQPriority_,
    IRQConfigActionEnum eAction_)
 {
    BOOL bSuccess = FALSE;
-   if((pstTheNVICController != NULL) ||
-      (ucIRQNumber_ > MAX_IRQ_NUMBER) ||
-      (ucIRQPriority_ > MAX_IRQ_PRIORITY))
-
+   if(pstTheNVICController != NULL)
    {
       if(eAction_ == IRQ_ENABLE)
       {
-         pstTheNVICController->NVIC_ISER[(ucIRQNumber_ / 32)] |= (1UL << (ucIRQNumber_ % 32));
-         // pstTheNVICController->NVIC_IPR[(ucIRQNumber_ / 4)] |= (ucIRQPriority_ << (((ucIRQNumber_ % 4) * 8) + (8 - IRQ_PRIORITY_BITS)));
+         pstTheNVICController->NVIC_ISER[(eIRQNumber_ / 32)] |= (1UL << (eIRQNumber_ % 32));
+         pstTheNVICController->NVIC_IPR[(eIRQNumber_ / 4)] |= (eIRQPriority_ << (((eIRQNumber_ % 4) * 8) + (8 - IRQ_PRIORITY_BITS)));
          bSuccess = TRUE;
       }
 
       if(eAction_ == IRQ_CLEAR)
       {
-         pstTheNVICController->NVIC_ICER[(ucIRQNumber_ / 32)] &= ~(1UL << (ucIRQNumber_ % 32));
-         // pstTheNVICController->NVIC_IPR[(ucIRQNumber_ / 4)] &= ~(0xFF << (((ucIRQNumber_ % 4) * 8) + (8 - IRQ_PRIORITY_BITS)));
+         pstTheNVICController->NVIC_ICER[(eIRQNumber_ / 32)] &= ~(1UL << (eIRQNumber_ % 32));
+         pstTheNVICController->NVIC_IPR[(eIRQNumber_ / 4)] &= ~(((1UL << IRQ_PRIORITY_BITS) - 1) << (((eIRQNumber_ % 4) * 8) + (8 - IRQ_PRIORITY_BITS)));
          bSuccess = TRUE;
       }
    }
