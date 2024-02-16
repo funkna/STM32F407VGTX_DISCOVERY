@@ -20,6 +20,8 @@
 //--------------------------------------------------------------
 // Base addresses and sizes for peripheral busses.
 //--------------------------------------------------------------
+#define BUS_CORTEX_M4_SIZE                         (0x00100000UL)
+#define BUS_CORTEX_M4_ADDRESS                      (0xE0000000UL)
 #define BUS_AHB3_SIZE                              (0x40001000UL)
 #define BUS_AHB3_ADDRESS                           (0x60000000UL)
 #define BUS_AHB2_SIZE                              (0x00060C00UL)
@@ -32,7 +34,16 @@
 #define BUS_APB1_ADDRESS                           (0x40000000UL)
 
 //--------------------------------------------------------------
-// Base addresses for peripheral controllers.
+// Base addresses for ARM Cortex-M4 peripheral controllers.
+//--------------------------------------------------------------
+// #define PERIPHERAL_ADDRESS_FPU                     (UL)
+// #define PERIPHERAL_ADDRESS_MPU                     (UL)
+// #define PERIPHERAL_ADDRESS_SYSTICK                 (UL)
+// #define PERIPHERAL_ADDRESS_SCB                     (UL)
+#define PERIPHERAL_ADDRESS_NVIC                    (0xE000E100UL)
+
+//--------------------------------------------------------------
+// Base addresses for STM32F407VGT6 peripheral controllers.
 //--------------------------------------------------------------
 #define PERIPHERAL_ADDRESS_FSMC_CR                 (0xA0000000UL)
 #define PERIPHERAL_ADDRESS_FSMC_B4                 (0x90000000UL)
