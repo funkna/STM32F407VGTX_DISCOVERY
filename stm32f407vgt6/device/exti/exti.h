@@ -52,17 +52,9 @@ typedef volatile struct
 } EXTIRegistersStruct;
 
 // Functions --------------------------------------------------------------------------------------
-
-// Singleton instance(s) for EXTI controller(s)
-static EXTIRegistersStruct* pstTheEXTIController = NULL;
 EXTIRegistersStruct* GetEXTIController()
 {
-   if(pstTheEXTIController == NULL)
-   {
-      pstTheEXTIController = (EXTIRegistersStruct*)PERIPHERAL_ADDRESS_RCC;
-   }
-
-   return pstTheEXTIController;
+   return (EXTIRegistersStruct*)PERIPHERAL_ADDRESS_EXTI;
 }
 
 #endif // EXTI_H_

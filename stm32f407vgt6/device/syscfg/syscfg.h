@@ -31,18 +31,6 @@
 #define EXTICR4_EXTI12        (0x0FUL << 0)
 // #define EXTICR
 
-#define EXTI_PIN_PORT_A       (0x00)
-#define EXTI_PIN_PORT_B       (0x01)
-#define EXTI_PIN_PORT_C       (0x02)
-#define EXTI_PIN_PORT_D       (0x03)
-#define EXTI_PIN_PORT_E       (0x04)
-#define EXTI_PIN_PORT_F       (0x05)
-#define EXTI_PIN_PORT_G       (0x06)
-#define EXTI_PIN_PORT_H       (0x07)
-#define EXTI_PIN_PORT_I       (0x08)
-#define EXTI_PIN_PORT_J       (0x09)
-#define EXTI_PIN_PORT_K       (0x0A)
-
 // Typedefs ---------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------
@@ -56,21 +44,14 @@ typedef volatile struct
    UINT EXTICR2;
    UINT EXTICR3;
    UINT EXTICR4;
-   UINT EXTICR;
+   UINT RESERVED[2];
+   UINT CMPCR;
 } SYSCFGRegistersStruct;
 
 // Functions --------------------------------------------------------------------------------------
-
-// Singleton instance(s) for SYSCFG controller(s)
-static SYSCFGRegistersStruct* pstTheSYSCFGController = NULL;
 SYSCFGRegistersStruct* GetSYSCFGController()
 {
-   if(pstTheSYSCFGController == NULL)
-   {
-      pstTheSYSCFGController = (SYSCFGRegistersStruct*)PERIPHERAL_ADDRESS_RCC;
-   }
-
-   return pstTheSYSCFGController;
+   return (SYSCFGRegistersStruct*)PERIPHERAL_ADDRESS_RCC;
 }
 
 #endif // SYSCFG_H_
