@@ -6,9 +6,9 @@
 #include <stdint.h>
 
 // Defines ----------------------------------------------------------------------------------------
-#define NULL 	((void*)0)
-#define FALSE	(0)
-#define TRUE	(!FALSE)
+#define NULL      ((void*)0)
+#define FALSE     (0)
+#define TRUE      (!FALSE)
 
 // Typedefs ---------------------------------------------------------------------------------------
 
