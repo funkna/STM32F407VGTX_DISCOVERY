@@ -21,6 +21,7 @@ static GPIOPinEnum GetGPIOFromButton(
    }
 };
 
+// -------------------------------------------------------------
 BOOL Button_Initialize()
 {
    BOOL bSuccess = TRUE;
@@ -28,6 +29,7 @@ BOOL Button_Initialize()
    return bSuccess;
 }
 
+// -------------------------------------------------------------
 BOOL Button_IsPressed(
    ButtonTypeEnum eButton_)
 {
