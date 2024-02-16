@@ -75,7 +75,7 @@ BOOL GPIO_Deinitialize(
 BOOL GPIO_SetConfig(
    GPIOControllerEnum eGPIOController_,
    GPIOPinEnum ePin_,
-   GPIOPinConfigurationStruct* pstConfiguration_)
+   const GPIOPinConfigurationStruct* pstConfiguration_)
 {
    if((apstTheGPIOControllers[eGPIOController_] == NULL) ||
       (pstConfiguration_ == NULL))

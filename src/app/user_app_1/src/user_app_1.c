@@ -1,11 +1,11 @@
 // Includes ---------------------------------------------------------------------------------------
 #include "led/led.h"
+#include "button/button.h"
 #include "user_app_1/user_app_1.h"
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
-static UINT uiCounter0 = 0;
-static UINT uiCounter1 = 0;
-static const UINT uiMAX_COUNT = 0x20000;
+static UINT uiCounter = 0;
+static const UINT uiMAX_COUNT = 0x10000;
 
 // Functions --------------------------------------------------------------------------------------
 BOOL Initialize_UserApp1()
@@ -17,35 +17,20 @@ BOOL Initialize_UserApp1()
 
 void Run_UserApp1()
 {
-   uiCounter0++;
-   if(uiCounter0 > uiMAX_COUNT)
+   uiCounter++;
+   if(uiCounter > uiMAX_COUNT)
    {
-      uiCounter0 = 0;
-      uiCounter1++;
-      if(uiCounter1 == 1)
-      {
-         LED_On(LED_GREEN);
-      }
-      if(uiCounter1 == 2)
-      {
-         LED_On(LED_ORANGE);
-      }
-      if(uiCounter1 == 3)
-      {
-         LED_On(LED_RED);
-      }
-      if(uiCounter1 == 4)
-      {
-         LED_On(LED_BLUE);
-      }
-      if(uiCounter1 == 5)
-      {
-         LED_Off(LED_GREEN);
-         LED_Off(LED_ORANGE);
-         LED_Off(LED_RED);
-         LED_Off(LED_BLUE);
-         uiCounter1 = 0;
-      }
+      uiCounter = 0;
+      LED_Toggle(LED_GREEN);
+   }
+
+   if(Button_IsPressed(BUTTON_USER))
+   {
+      LED_On(LED_BLUE);
+   }
+   else
+   {
+      LED_Off(LED_BLUE);
    }
 }
 
