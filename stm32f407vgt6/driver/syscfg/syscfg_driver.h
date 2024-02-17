@@ -24,7 +24,7 @@ BOOL SYSCFG_Deinitialize();
 // Configure EXTI.
 // -------------------------------------------------------------
 BOOL SYSCFG_ConfigureEXTI(
-   GPIOControllerEnum eController_,
+   GPIOPortEnum ePort_,
    GPIOPinEnum ePin_);
 
 #endif // SYSCFG_DRIVER_H_

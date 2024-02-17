@@ -35,24 +35,24 @@ BOOL SYSCFG_Deinitialize()
 
 // -------------------------------------------------------------
 BOOL SYSCFG_ConfigureEXTI(
-   GPIOControllerEnum eController_,
+   GPIOPortEnum ePort_,
    GPIOPinEnum ePin_)
 {
    BOOL bSuccess = TRUE;
-   UCHAR ucSysCfgCR = (ePin_ / 4) + 1;
-   UCHAR ucEXTIPort = (eController_ & 0x0F);
+   UCHAR ucSysCfgCR = (ePin_ / 4);
+   UCHAR ucEXTIPort = (ePort_ & 0x0F);
    switch(ucSysCfgCR)
    {
-      case 1:
+      case 0:
          pstTheSYSCFGController->EXTICR1 |= (ucEXTIPort << (ucEXTIPort % 4));
          break;
-      case 2:
+      case 1:
          pstTheSYSCFGController->EXTICR2 |= (ucEXTIPort << (ucEXTIPort % 4));
          break;
-      case 3:
+      case 2:
          pstTheSYSCFGController->EXTICR3 |= (ucEXTIPort << (ucEXTIPort % 4));
          break;
-      case 4:
+      case 3:
          pstTheSYSCFGController->EXTICR4 |= (ucEXTIPort << (ucEXTIPort % 4));
          break;
       default:

@@ -48,7 +48,7 @@ typedef enum
 } ADCControllerEnum;
 
 // -------------------------------------------------------------
-// GPIO Controller Enumeration
+// GPIO Port Enumeration
 // -------------------------------------------------------------
 typedef enum
 {
@@ -62,6 +62,6 @@ typedef enum
    GPIO_GPIOH,
    GPIO_GPIOI,
    GPIO_MAX
-} GPIOControllerEnum;
+} GPIOPortEnum;
 
 #endif // PERIPHERALS_H_

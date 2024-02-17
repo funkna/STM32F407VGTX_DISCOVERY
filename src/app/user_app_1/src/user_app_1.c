@@ -23,7 +23,9 @@ static void ButtonPressCallback(void)
 // -------------------------------------------------------------
 BOOL Initialize_UserApp1()
 {
-   return Button_ConfigureAsInterrupt(BUTTON_PRESS, &ButtonPressCallback);
+   BOOL bSuccess = TRUE;
+   bSuccess = Button_ConfigureAsInterrupt(BUTTON_PRESS, &ButtonPressCallback);
+   return bSuccess;
 }
 
 // -------------------------------------------------------------

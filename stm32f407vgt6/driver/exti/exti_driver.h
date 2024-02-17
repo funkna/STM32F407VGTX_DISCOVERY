@@ -27,7 +27,7 @@ BOOL EXTI_Initialize();
 // Enable an EXTI interrupt for a GPIO pin.
 // -------------------------------------------------------------
 BOOL EXTI_EnableInterrupt(
-   GPIOControllerEnum eController_,
+   GPIOPortEnum eController_,
    GPIOPinEnum ePin_,
    EXTITriggerEnum eMode_);
 
@@ -35,7 +35,7 @@ BOOL EXTI_EnableInterrupt(
 // Disable an EXTI interrupt for a GPIO pin.
 // -------------------------------------------------------------
 BOOL EXTI_DisableInterrupt(
-   GPIOControllerEnum eController_,
+   GPIOPortEnum eController_,
    GPIOPinEnum ePin_);
 
 // -------------------------------------------------------------

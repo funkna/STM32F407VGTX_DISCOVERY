@@ -34,9 +34,9 @@ typedef volatile struct
 // Functions --------------------------------------------------------------------------------------
 
 GPIORegistersStruct* GetGPIOController(
-   GPIOControllerEnum eController_)
+   GPIOPortEnum ePort_)
 {
-   switch(eController_)
+   switch(ePort_)
    {
       case GPIO_GPIOA:
          return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOA;

@@ -5,9 +5,6 @@
 // Defines ----------------------------------------------------------------------------------------
 // Typedefs ---------------------------------------------------------------------------------------
 // Statics, Externs & Globals ---------------------------------------------------------------------
-static GPIOControllerEnum eTheLEDGPIOPort = GPIO_GPIOD;
-static const GPIOPinConfigurationStruct stTheLEDGPIOConfig = {MODE_GP_OUTPUT, OUTPUT_PUSHPULL, SPEED_MED, PUPD_PD};
-
 // Functions --------------------------------------------------------------------------------------
 static GPIOPinEnum GetGPIOFromLED(
    LEDTypeEnum eLED_)
@@ -31,10 +28,11 @@ static GPIOPinEnum GetGPIOFromLED(
 BOOL LED_Initialize()
 {
    BOOL bSuccess = TRUE;
-   bSuccess &= GPIO_SetConfig(eTheLEDGPIOPort, GetGPIOFromLED(LED_GREEN), &stTheLEDGPIOConfig);
-   bSuccess &= GPIO_SetConfig(eTheLEDGPIOPort, GetGPIOFromLED(LED_ORANGE), &stTheLEDGPIOConfig);
-   bSuccess &= GPIO_SetConfig(eTheLEDGPIOPort, GetGPIOFromLED(LED_RED), &stTheLEDGPIOConfig);
-   bSuccess &= GPIO_SetConfig(eTheLEDGPIOPort, GetGPIOFromLED(LED_BLUE), &stTheLEDGPIOConfig);
+   const GPIOPinConfigurationStruct stLEDGPIOConfig = {MODE_GP_OUTPUT, OUTPUT_PUSHPULL, SPEED_MED, PUPD_PD};
+   bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_GREEN), &stLEDGPIOConfig);
+   bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_ORANGE), &stLEDGPIOConfig);
+   bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_RED), &stLEDGPIOConfig);
+   bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_BLUE), &stLEDGPIOConfig);
    return bSuccess;
 }
 
@@ -42,19 +40,19 @@ BOOL LED_Initialize()
 void LED_On(
    LEDTypeEnum eLED_)
 {
-   GPIO_WritePin(eTheLEDGPIOPort, GetGPIOFromLED(eLED_), GPIO_HI);
+   (void)GPIO_WritePin(GPIO_GPIOD, GetGPIOFromLED(eLED_), GPIO_HI);
 }
 
 // -------------------------------------------------------------
 void LED_Off(
    LEDTypeEnum eLED_)
 {
-   GPIO_WritePin(eTheLEDGPIOPort, GetGPIOFromLED(eLED_), GPIO_LO);
+   (void)GPIO_WritePin(GPIO_GPIOD, GetGPIOFromLED(eLED_), GPIO_LO);
 }
 
 // -------------------------------------------------------------
 void LED_Toggle(
    LEDTypeEnum eLED_)
 {
-   GPIO_TogglePin(eTheLEDGPIOPort, GetGPIOFromLED(eLED_));
+   (void)GPIO_TogglePin(GPIO_GPIOD, GetGPIOFromLED(eLED_));
 }

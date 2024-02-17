@@ -95,119 +95,57 @@ typedef struct
    GPIOPUPDEnum ePUPD;
 } GPIOPinConfigurationStruct;
 
-// -------------------------------------------------------------
-// GPIO Port has 16 pins, so USHORT will suffice.
-// -------------------------------------------------------------
-// typedef USHORT GPIOPortState;
-
 // Functions --------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------
-// Inititalize a GPIO controller.
+// Inititalize a GPIO Port.
 // -------------------------------------------------------------
 BOOL GPIO_Initialize(
-   GPIOControllerEnum eGPIOController_);
+   GPIOPortEnum eGPIOPort_);
 
 // -------------------------------------------------------------
-// Deinititalize a GPIO controller.
+// Deinititalize a GPIO Port.
 // -------------------------------------------------------------
 BOOL GPIO_Deinitialize(
-   GPIOControllerEnum eGPIOController_);
+   GPIOPortEnum eGPIOPort_);
 
 // -------------------------------------------------------------
-// Set/Get configurations for a GPIO pin.
+// Set configurations for a GPIO pin.
 // -------------------------------------------------------------
 BOOL GPIO_SetConfig(
-   GPIOControllerEnum eGPIOController_,
+   GPIOPortEnum eGPIOPort_,
    GPIOPinEnum ePin_,
    const GPIOPinConfigurationStruct* pstConfiguration_);
+
+// -------------------------------------------------------------
+// Get configurations for a GPIO pin.
 // -------------------------------------------------------------
 BOOL GPIO_GetConfig(
-   GPIOControllerEnum eGPIOController_,
+   GPIOPortEnum eGPIOPort_,
    GPIOPinEnum ePin_,
    GPIOPinConfigurationStruct* pstConfiguration_);
-// -------------------------------------------------------------
-BOOL GPIO_SetConfigPinMode(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOPinModeEnum eMode_);
-// -------------------------------------------------------------
-BOOL GPIO_GetConfigPinMode(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOPinModeEnum* peMode_);
-// -------------------------------------------------------------
-BOOL GPIO_SetConfigPinOutputType(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOOutputTypeEnum eOutputType_);
-// -------------------------------------------------------------
-BOOL GPIO_GetConfigPinOutputType(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOOutputTypeEnum* peOutputType_);
-// -------------------------------------------------------------
-BOOL GPIO_SetConfigPinSpeed(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOSpeedEnum eSpeed_);
-// -------------------------------------------------------------
-BOOL GPIO_GetConfigPinSpeed(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOSpeedEnum* peSpeed_);
-// -------------------------------------------------------------
-BOOL GPIO_SetConfigPinPUPD(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOPUPDEnum ePUPD_);
-// -------------------------------------------------------------
-BOOL GPIO_GetConfigPinPUPD(
-   GPIOControllerEnum eGPIOController_,
-   GPIOPinEnum ePin_,
-   GPIOPUPDEnum* pePUPD_);
 
 // -------------------------------------------------------------
 // Read a GPIO pin.
 // -------------------------------------------------------------
 BOOL GPIO_ReadPin(
-   GPIOControllerEnum eGPIOController_,
+   GPIOPortEnum eGPIOPort_,
    GPIOPinEnum ePin_,
    GPIOStateEnum* peState_);
-
-// -------------------------------------------------------------
-// Read a port of GPIO pins.
-// -------------------------------------------------------------
-// BOOL GPIO_ReadPort(
-//    GPIOControllerEnum eGPIOController_,
-//    GPIOPortState* pusPort_);
 
 // -------------------------------------------------------------
 // Write to a GPIO pin.
 // -------------------------------------------------------------
 BOOL GPIO_WritePin(
-   GPIOControllerEnum eGPIOController_,
+   GPIOPortEnum eGPIOPort_,
    GPIOPinEnum ePin_,
    GPIOStateEnum eState_);
-
-// -------------------------------------------------------------
-// Write to a port of GPIO pins.
-// -------------------------------------------------------------
-// BOOL GPIO_WritePort(
-//    GPIOControllerEnum eGPIOController_,
-//    GPIOPortState usPort_);
 
 // -------------------------------------------------------------
 // Toggle a GPIO pin.
 // -------------------------------------------------------------
 BOOL GPIO_TogglePin(
-   GPIOControllerEnum eGPIOController_,
+   GPIOPortEnum eGPIOPort_,
    GPIOPinEnum ePin_);
-
-// -------------------------------------------------------------
-// Toggle a port of GPIO pins.
-// -------------------------------------------------------------
-// BOOL GPIO_TogglePort(
-//    GPIOControllerEnum eGPIOController_);
 
 #endif // GPIO_DRIVER_H_

@@ -20,7 +20,7 @@ BOOL EXTI_Initialize()
 
 //--------------------------------------------------------------
 BOOL EXTI_EnableInterrupt(
-   GPIOControllerEnum eController_,
+   GPIOPortEnum ePort_,
    GPIOPinEnum ePin_,
    EXTITriggerEnum eMode_)
 {
@@ -58,10 +58,10 @@ BOOL EXTI_EnableInterrupt(
 
 //--------------------------------------------------------------
 BOOL EXTI_DisableInterrupt(
-   GPIOControllerEnum eController_,
+   GPIOPortEnum ePort_,
    GPIOPinEnum ePin_)
 {
-   return EXTI_EnableInterrupt(eController_, ePin_, EXTI_TRIGGER_NONE);
+   return EXTI_EnableInterrupt(ePort_, ePin_, EXTI_TRIGGER_NONE);
 }
 
 //--------------------------------------------------------------

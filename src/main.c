@@ -16,21 +16,15 @@
 
 static BOOL InitializeDriversAndAPI()
 {
-   // Initialize Drivers
    BOOL bInitSuccess = TRUE;
+
+   // Initialize Drivers
    bInitSuccess &= RCC_Initialize();
    bInitSuccess &= NVIC_Initialize();
    bInitSuccess &= EXTI_Initialize();
    bInitSuccess &= SYSCFG_Initialize();
    bInitSuccess &= GPIO_Initialize(GPIO_GPIOA);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOB);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOC);
    bInitSuccess &= GPIO_Initialize(GPIO_GPIOD);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOE);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOF);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOG);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOH);
-   // bInitSuccess &= GPIO_Initialize(GPIO_GPIOI);
 
    // Initialize API
    bInitSuccess &= LED_Initialize();
