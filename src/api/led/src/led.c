@@ -28,7 +28,7 @@ static GPIOPinEnum GetGPIOFromLED(
 BOOL LED_Initialize()
 {
    BOOL bSuccess = TRUE;
-   const GPIOPinConfigurationStruct stLEDGPIOConfig = {MODE_GP_OUTPUT, OUTPUT_PUSHPULL, SPEED_MED, PUPD_PD};
+   const GPIOPinConfigurationStruct stLEDGPIOConfig = {GPIOMODE_GP_OUTPUT, GPIOTYPE_PUSHPULL, GPIOSPEED_MED, GPIOPUPD_PD};
    bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_GREEN), &stLEDGPIOConfig);
    bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_ORANGE), &stLEDGPIOConfig);
    bSuccess &= GPIO_SetConfig(GPIO_GPIOD, GetGPIOFromLED(LED_RED), &stLEDGPIOConfig);
