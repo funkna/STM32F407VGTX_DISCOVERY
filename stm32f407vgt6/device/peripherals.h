@@ -64,4 +64,15 @@ typedef enum
    GPIO_MAX
 } GPIOPortEnum;
 
+// -------------------------------------------------------------
+// SPI Controller Enumeration
+// -------------------------------------------------------------
+typedef enum
+{
+   SPI_SPI1 = 0,
+   SPI_SPI2,
+   SPI_SPI3,
+   SPI_MAX
+} SPIControllerEnum;
+
 #endif // PERIPHERALS_H_

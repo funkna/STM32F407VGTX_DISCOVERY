@@ -4,6 +4,7 @@
 
 #include "driver/cortex-m4/nvic/nvic_driver.h"
 #include "driver/exti/exti_driver.h"
+#include "driver/spi/spi_driver.h"
 #include "driver/syscfg/syscfg_driver.h"
 
 #include "user_app_1/user_app_1.h"
@@ -31,11 +32,17 @@ BOOL Initialize_UserApp1()
 // -------------------------------------------------------------
 void Run_UserApp1()
 {
+   static const ULONG ulDATA_LENGTH = 4;
+   static UCHAR aucData[4] = {0x01, 0x02, 0x03, 0x04};
+
    uiCounter++;
    if(uiCounter > uiMAX_COUNT)
    {
       uiCounter = 0;
-      LED_Toggle(LED_GREEN);
+      if(SPI_Write(SPI_SPI1, &aucData[0], ulDATA_LENGTH))
+      {
+         LED_Toggle(LED_GREEN);
+      }
    }
 }
 
