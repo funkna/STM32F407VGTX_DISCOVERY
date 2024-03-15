@@ -85,6 +85,29 @@ typedef enum
 } GPIOPUPDEnum;
 
 // -------------------------------------------------------------
+// GPIO Alternate Functions
+// -------------------------------------------------------------
+typedef enum
+{
+   ALTFUNC_AF0       = 0x00,
+   ALTFUNC_AF1       = 0x01,
+   ALTFUNC_AF2       = 0x02,
+   ALTFUNC_AF3       = 0x03,
+   ALTFUNC_AF4       = 0x04,
+   ALTFUNC_AF5       = 0x05,
+   ALTFUNC_AF6       = 0x06,
+   ALTFUNC_AF7       = 0x07,
+   ALTFUNC_AF8       = 0x08,
+   ALTFUNC_AF9       = 0x09,
+   ALTFUNC_AF10      = 0x0A,
+   ALTFUNC_AF11      = 0x0B,
+   ALTFUNC_AF12      = 0x0C,
+   ALTFUNC_AF13      = 0x0D,
+   ALTFUNC_AF14      = 0x0E,
+   ALTFUNC_AF15      = 0x0F
+} GPIOAltFuncEnum;
+
+// -------------------------------------------------------------
 // GPIO Pin Configuration Information
 // -------------------------------------------------------------
 typedef struct
@@ -93,6 +116,7 @@ typedef struct
    GPIOOutputTypeEnum eOutputType;
    GPIOSpeedEnum eSpeed;
    GPIOPUPDEnum ePUPD;
+   GPIOAltFuncEnum eAlternateFunction;
 } GPIOPinConfigurationStruct;
 
 // Functions --------------------------------------------------------------------------------------

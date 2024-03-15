@@ -16,31 +16,22 @@ static STM32F407VGT6_PeriperalEnum GPIOEnumToSTM32Enum(
    {
       case GPIO_GPIOA:
          return GPIOA;
-         break;
       case GPIO_GPIOB:
          return GPIOB;
-         break;
       case GPIO_GPIOC:
          return GPIOC;
-         break;
       case GPIO_GPIOD:
          return GPIOD;
-         break;
       case GPIO_GPIOE:
          return GPIOE;
-         break;
       case GPIO_GPIOF:
          return GPIOF;
-         break;
       case GPIO_GPIOG:
          return GPIOG;
-         break;
       case GPIO_GPIOH:
          return GPIOH;
-         break;
       case GPIO_GPIOI:
          return GPIOI;
-         break;
       default:
          return INVALID;
    }
@@ -89,6 +80,16 @@ BOOL GPIO_SetConfig(
    (*apstTheGPIOPorts[eGPIOPort_]).OTYPER |= ((UINT)pstConfiguration_->eOutputType << ePin_);
    (*apstTheGPIOPorts[eGPIOPort_]).OSPEEDR |= ((UINT)pstConfiguration_->eSpeed << (2 * ePin_));
    (*apstTheGPIOPorts[eGPIOPort_]).PUPDR |= ((UINT)pstConfiguration_->ePUPD << (2 * ePin_));
+
+   if(ePin_ < GPIO_PIN_8)
+   {
+      (*apstTheGPIOPorts[eGPIOPort_]).AFRL |= ((UINT)pstConfiguration_->eAlternateFunction << (ePin_ % 8));
+   }
+   else
+   {
+      (*apstTheGPIOPorts[eGPIOPort_]).AFRH |= ((UINT)pstConfiguration_->eAlternateFunction << (ePin_ % 8));
+   }
+
    return TRUE;
 }
 
@@ -108,6 +109,9 @@ BOOL GPIO_GetConfig(
    pstConfiguration_->eOutputType = (GPIOOutputTypeEnum)(((*apstTheGPIOPorts[eGPIOPort_]).OTYPER >> ePin_) & OTYPER_MASK);
    pstConfiguration_->eSpeed = (GPIOSpeedEnum)(((*apstTheGPIOPorts[eGPIOPort_]).OSPEEDR >> (2 * ePin_)) & OSPEEDR_MASK);
    pstConfiguration_->ePUPD = (GPIOPUPDEnum)(((*apstTheGPIOPorts[eGPIOPort_]).PUPDR >> (2 * ePin_)) & PUPDR_MASK);
+
+   // TODO: Implement getting the AltFunc field.
+
    return TRUE;
 }
 

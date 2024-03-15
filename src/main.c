@@ -18,6 +18,7 @@
 #include "driver/exti/exti_driver.h"
 #include "driver/gpio/gpio_driver.h"
 #include "driver/rcc/rcc_driver.h"
+#include "driver/spi/spi_driver.h"
 #include "driver/syscfg/syscfg_driver.h"
 
 // APIs
@@ -36,8 +37,8 @@ static BOOL InitializeDriversAndAPI()
    bInitSuccess &= NVIC_Initialize();
    bInitSuccess &= EXTI_Initialize();
    bInitSuccess &= SYSCFG_Initialize();
-   bInitSuccess &= GPIO_Initialize(GPIO_GPIOA);
-   bInitSuccess &= GPIO_Initialize(GPIO_GPIOD);
+   bInitSuccess &= GPIO_Initialize(GPIO_GPIOA); // Buttons
+   bInitSuccess &= GPIO_Initialize(GPIO_GPIOD); // LEDs
 
    // Initialize API
    bInitSuccess &= LED_Initialize();

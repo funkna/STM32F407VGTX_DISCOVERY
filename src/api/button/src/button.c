@@ -9,7 +9,7 @@
 // Typedefs ---------------------------------------------------------------------------------------
 // Statics, Externs & Globals ---------------------------------------------------------------------
 static void (*pfButtonInterruptCallback)(void) = NULL;
-static const GPIOPinConfigurationStruct stTheButtonGPIOConfig = {MODE_INPUT, OUTPUT_OPENDRAIN, SPEED_VHI, PUPD_NONE};
+static const GPIOPinConfigurationStruct stTheButtonGPIOConfig = {MODE_INPUT, OUTPUT_OPENDRAIN, SPEED_VHI, PUPD_NONE, ALTFUNC_AF0};
 
 // Functions --------------------------------------------------------------------------------------
 
