@@ -38,6 +38,7 @@ static BOOL InitializeDriversAndAPI()
    bInitSuccess &= EXTI_Initialize();
    bInitSuccess &= SYSCFG_Initialize();
    bInitSuccess &= GPIO_Initialize(GPIO_GPIOA); // Buttons & SPI
+   bInitSuccess &= GPIO_Initialize(GPIO_GPIOB); // I2C
    bInitSuccess &= GPIO_Initialize(GPIO_GPIOD); // LEDs
    bInitSuccess &= SPI_Initialize(SPI_SPI1);
 
