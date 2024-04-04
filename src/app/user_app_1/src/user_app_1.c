@@ -26,20 +26,35 @@ BOOL Initialize_UserApp1()
 {
    BOOL bSuccess = TRUE;
    bSuccess |= Button_ConfigureAsInterrupt(BUTTON_PRESS, &ButtonPressCallback);
+
+   SPIConfigurationStruct stSPIConfig = {
+      SPIMODE_MASTER,
+      SPIBUS_FULL_DUPLEX,
+      SPICLK_PRESCALARDIV_2,
+      SPICPOL_IDLE_LO,
+      SPICPHA_RISE,
+      SPIDFF_8BITS,
+      SPISSM_ENABLE,
+      SPISSI_ENABLE,
+      SPIMULTIMASTER_DISABLE
+   };
+
+   bSuccess |= SPI_SetConfig(SPI_SPI1, &stSPIConfig);
+   bSuccess |= SPI_Enable(SPI_SPI1);
+
    return bSuccess;
 }
 
 // -------------------------------------------------------------
 void Run_UserApp1()
 {
-   static const ULONG ulDATA_LENGTH = 4;
    static UCHAR aucData[4] = {0x01, 0x02, 0x03, 0x04};
 
    uiCounter++;
    if(uiCounter > uiMAX_COUNT)
    {
       uiCounter = 0;
-      if(SPI_Write(SPI_SPI1, &aucData[0], ulDATA_LENGTH))
+      if(SPI_Write(SPI_SPI1, &aucData[0], 4))
       {
          LED_Toggle(LED_GREEN);
       }

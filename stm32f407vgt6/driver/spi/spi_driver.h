@@ -54,9 +54,15 @@ typedef enum
 
 typedef enum
 {
-   SPISMM_DISABLE = 0,
-   SPISMM_ENABLE
-} SPISlaveManagementEnum;
+   SPISSM_DISABLE = 0,
+   SPISSM_ENABLE
+} SPISoftwareSlaveManagementEnum;
+
+typedef enum
+{
+   SPISSI_DISABLE = 0,
+   SPISSI_ENABLE
+} SPISlaveSelectInternalEnum;
 
 typedef enum
 {
@@ -72,7 +78,8 @@ typedef struct
    SPIClockPolarityEnum eClockPolarity;
    SPIClockPhaseEnum eClockPhase;
    SPIDataFrameSizeEnum eDataFrameSize;
-   SPISlaveManagementEnum eSlaveManagement;
+   SPISoftwareSlaveManagementEnum eSlaveManagement;
+   SPISlaveSelectInternalEnum eInternalSelect;
    SPIMultiMasterEnum eMultiMaster;
 } SPIConfigurationStruct;
 

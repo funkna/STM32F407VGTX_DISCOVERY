@@ -41,13 +41,20 @@ BOOL SPI_Initialize(
          return FALSE;
       }
 
+      GPIOPinConfigurationStruct stSPIConfig = {GPIOMODE_ALT_FUNC, GPIOTYPE_PUSHPULL, GPIOSPEED_HI, GPIOPUPD_NONE, GPIOALTFUNC_AF5};
       if(eController_ == SPI_SPI1)
       {
-         GPIOPinConfigurationStruct stSPIConfig = {GPIOMODE_ALT_FUNC, GPIOTYPE_PUSHPULL, GPIOSPEED_VHI, GPIOPUPD_NONE, GPIOALTFUNC_AF5};
          GPIO_SetConfig(GPIO_GPIOA, GPIO_PIN_4, &stSPIConfig); // SS
          GPIO_SetConfig(GPIO_GPIOA, GPIO_PIN_5, &stSPIConfig); // SCK
          GPIO_SetConfig(GPIO_GPIOA, GPIO_PIN_6, &stSPIConfig); // MISO
          GPIO_SetConfig(GPIO_GPIOA, GPIO_PIN_7, &stSPIConfig); // MOSI
+      }
+      else if(eController_ == SPI_SPI2)
+      {
+         GPIO_SetConfig(GPIO_GPIOB, GPIO_PIN_12, &stSPIConfig); // SS
+         GPIO_SetConfig(GPIO_GPIOB, GPIO_PIN_13, &stSPIConfig); // SCK
+         GPIO_SetConfig(GPIO_GPIOB, GPIO_PIN_14, &stSPIConfig); // MISO
+         GPIO_SetConfig(GPIO_GPIOB, GPIO_PIN_15, &stSPIConfig); // MOSI
       }
       else
       {
@@ -110,7 +117,6 @@ BOOL SPI_SetConfig(
    if(pstConfiguration_->eMode == SPIMODE_MASTER)
    {
       uiCR1Value |= CR1_MSTR;
-      uiCR1Value |= CR1_SSI;
    }
    else // SPIMODE_SLAVE
    {
@@ -200,13 +206,22 @@ BOOL SPI_SetConfig(
       uiCR1Value &= ~CR1_DFF;
    }
 
-   if(pstConfiguration_->eSlaveManagement == SPISMM_ENABLE)
+   if(pstConfiguration_->eSlaveManagement == SPISSM_ENABLE)
    {
       uiCR1Value |= CR1_SSM;
    }
    else // SPISSM_DISABLE
    {
       uiCR1Value &= ~CR1_SSM;
+   }
+
+   if(pstConfiguration_->eSlaveManagement == SPISSI_ENABLE)
+   {
+      uiCR1Value |= CR1_SSI;
+   }
+   else // SPISSI_DISABLE
+   {
+      uiCR1Value &= ~CR1_SSI;
    }
 
    if(pstConfiguration_->eMultiMaster == SPIMULTIMASTER_ENABLE)
@@ -255,7 +270,7 @@ BOOL SPI_Write(
 
    while(uiDataLength_ > 0)
    {
-      while(!(apstTheSPIControllers[eController_]->SR & SR_TXE))
+      while(!(apstTheSPIControllers[eController_]->SR & SR_TXE));
 
       apstTheSPIControllers[eController_]->DR = *pucData_;
       pucData_++;
