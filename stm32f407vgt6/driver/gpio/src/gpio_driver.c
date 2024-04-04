@@ -83,11 +83,11 @@ BOOL GPIO_SetConfig(
 
    if(ePin_ < GPIO_PIN_8)
    {
-      (*apstTheGPIOPorts[eGPIOPort_]).AFRL |= ((UINT)pstConfiguration_->eAlternateFunction << (ePin_ % 8));
+      (*apstTheGPIOPorts[eGPIOPort_]).AFRL |= ((UINT)pstConfiguration_->eAlternateFunction << (4 * (ePin_ % 8)));
    }
    else
    {
-      (*apstTheGPIOPorts[eGPIOPort_]).AFRH |= ((UINT)pstConfiguration_->eAlternateFunction << (ePin_ % 8));
+      (*apstTheGPIOPorts[eGPIOPort_]).AFRH |= ((UINT)pstConfiguration_->eAlternateFunction << (4 * (ePin_ % 8)));
    }
 
    return TRUE;
