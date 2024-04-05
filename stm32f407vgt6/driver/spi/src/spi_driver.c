@@ -7,6 +7,7 @@
 // Defines ----------------------------------------------------------------------------------------
 // Typedefs ---------------------------------------------------------------------------------------
 // Statics, Externs & Globals ---------------------------------------------------------------------
+static void (*pfSPIReceiveInterruptCallback)(void) = NULL;
 static SPIRegistersStruct* apstTheSPIControllers[SPI_MAX] = {NULL};
 
 // Functions --------------------------------------------------------------------------------------
@@ -23,6 +24,17 @@ static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
          return SPI3_I2S3;
       default:
          return INVALID;
+   }
+}
+
+// -------------------------------------------------------------
+// Handle the EXTI0 interrupt here, as it routed to the button.
+// -------------------------------------------------------------
+void SPI2_IRQHandler(void)
+{
+   if(pfSPIReceiveInterruptCallback != NULL)
+   {
+      pfSPIReceiveInterruptCallback();
    }
 }
 
@@ -281,4 +293,55 @@ BOOL SPI_Write(
       return TRUE;
    }
    return FALSE;
+}
+
+// -------------------------------------------------------------
+BOOL SPI_ConfigureAsInterrupt(
+   SPIControllerEnum eController_,
+   SPIInterruptTypeEnum eType_,
+   void (*fpCallback_)(void))
+{
+   if(apstTheSPIControllers[eController_] == NULL)
+   {
+      return FALSE;
+   }
+
+   IRQVectorEnum eIRQVector = IRQ_VECTOR_MAX;
+   switch(eController_)
+   {
+      case SPI_SPI1:
+      {
+         eIRQVector = IRQ_VECTOR_SPI1;
+         break;
+      }
+      case SPI_SPI2:
+      {
+         eIRQVector = IRQ_VECTOR_SPI2;
+         break;
+      }
+      case SPI_SPI3:
+      default:
+         return FALSE;
+   }
+
+   apstTheSPIControllers[eController_]->CR2 |= CR2_RXNEIE;
+
+   switch(eType_)
+   {
+      case SPIINTTYPE_RECEIVE:
+      {
+         if(fpCallback_ != NULL)
+         {
+            pfSPIReceiveInterruptCallback = fpCallback_;
+         }
+         break;
+      }
+      case SPIINTTYPE_TRANSMIT:
+      case SPIINTTYPE_ERROR:
+      default: // Fall-through
+         return FALSE;
+   }
+
+
+   return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
 }

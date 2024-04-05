@@ -10,6 +10,7 @@
 #include "user_app_1/user_app_1.h"
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
+static UCHAR ucTheSPIReadByte = 0x00;
 static UINT uiCounter = 0;
 static const UINT uiMAX_COUNT = 0x10000;
 
@@ -19,6 +20,17 @@ static const UINT uiMAX_COUNT = 0x10000;
 static void ButtonPressCallback(void)
 {
    LED_Toggle(LED_RED);
+}
+
+static void SPIReadCallback(void)
+{
+   ucTheSPIReadByte = 0x00;
+
+   SPI_Read(SPI_SPI2, &ucTheSPIReadByte);
+   if(0xAA == ucTheSPIReadByte)
+   {
+      LED_Toggle(LED_ORANGE);
+   }
 }
 
 // -------------------------------------------------------------
@@ -57,14 +69,14 @@ BOOL Initialize_UserApp1()
    bSuccess |= SPI_SetConfig(SPI_SPI2, &stSPISlaveConfig);
    bSuccess |= SPI_Enable(SPI_SPI2);
 
+   bSuccess |= SPI_ConfigureAsInterrupt(SPI_SPI2, SPIINTTYPE_RECEIVE, &SPIReadCallback);
+
    return bSuccess;
 }
 
 // -------------------------------------------------------------
 void Run_UserApp1()
 {
-   UCHAR ucData = 0x00;
-
    uiCounter++;
    if(uiCounter > uiMAX_COUNT)
    {
@@ -72,12 +84,6 @@ void Run_UserApp1()
       if(SPI_Write(SPI_SPI1, 0xAA))
       {
          LED_Toggle(LED_GREEN);
-      }
-
-      if(SPI_Read(SPI_SPI2, &ucData) &&
-         (0xAA == ucData))
-      {
-         LED_Toggle(LED_ORANGE);
       }
    }
 }

@@ -5,6 +5,7 @@
 // Includes ---------------------------------------------------------------------------------------
 #include "types.h"
 #include "device/peripherals.h"
+#include "driver/cortex-m4/nvic/nvic_driver.h"
 
 // Defines ----------------------------------------------------------------------------------------
 // Typedefs ---------------------------------------------------------------------------------------
@@ -69,6 +70,13 @@ typedef enum
    SPIMULTIMASTER_DISABLE = 0,
    SPIMULTIMASTER_ENABLE
 } SPIMultiMasterEnum;
+
+typedef enum
+{
+   SPIINTTYPE_RECEIVE = 0,
+   SPIINTTYPE_TRANSMIT,
+   SPIINTTYPE_ERROR
+} SPIInterruptTypeEnum;
 
 typedef struct
 {
@@ -136,5 +144,13 @@ BOOL SPI_Read(
 BOOL SPI_Write(
    SPIControllerEnum eController_,
    UCHAR ucData_);
+
+// -------------------------------------------------------------
+// Enable an interrupt vector for a SPI controller.
+// -------------------------------------------------------------
+BOOL SPI_ConfigureAsInterrupt(
+   SPIControllerEnum eController_,
+   SPIInterruptTypeEnum eType_,
+   void (*fpCallback_)(void));
 
 #endif // SPI_DRIVER_H_

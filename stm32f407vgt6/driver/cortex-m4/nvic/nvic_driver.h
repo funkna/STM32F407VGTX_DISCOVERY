@@ -58,6 +58,9 @@ typedef enum
    IRQ_VECTOR_EXTI2 = 8,
    IRQ_VECTOR_EXTI3 = 9,
    IRQ_VECTOR_EXTI4 = 10,
+   IRQ_VECTOR_SPI1 = 35,
+   IRQ_VECTOR_SPI2 = 36,
+   IRQ_VECTOR_SPI3 = 51,
    IRQ_VECTOR_MAX = 82
 } IRQVectorEnum;
 
