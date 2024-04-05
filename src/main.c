@@ -41,6 +41,7 @@ static BOOL InitializeDriversAndAPI()
    bInitSuccess &= GPIO_Initialize(GPIO_GPIOB); // SPI
    bInitSuccess &= GPIO_Initialize(GPIO_GPIOD); // LEDs
    bInitSuccess &= SPI_Initialize(SPI_SPI1);
+   bInitSuccess &= SPI_Initialize(SPI_SPI2);
 
    // Initialize API
    bInitSuccess &= LED_Initialize();

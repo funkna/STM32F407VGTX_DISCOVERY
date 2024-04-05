@@ -139,22 +139,4 @@ BOOL SPI_Write(
    UCHAR* pucData_,
    UINT uiDataLength_);
 
-// -------------------------------------------------------------
-// Return if CR1.SPE is set.
-// -------------------------------------------------------------
-BOOL SPI_IsEnabled(
-   SPIControllerEnum eController_);
-
-// -------------------------------------------------------------
-// Return if SR.TXE is set.
-// -------------------------------------------------------------
-BOOL SPI_IsTxBufferEmpty(
-   SPIControllerEnum eController_);
-
-// -------------------------------------------------------------
-// Return if SR.RXNE is not set.
-// -------------------------------------------------------------
-BOOL SPI_IsRxBufferEmpty(
-   SPIControllerEnum eController_);
-
 #endif // SPI_DRIVER_H_

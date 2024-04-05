@@ -253,8 +253,22 @@ BOOL SPI_Read(
    UCHAR* pucData_,
    UINT uiDataLength_)
 {
-	// TODO
-	return FALSE;
+   if(apstTheSPIControllers[eController_] == NULL)
+   {
+      return FALSE;
+   }
+
+   while(uiDataLength_ > 0)
+   {
+      if(apstTheSPIControllers[eController_]->SR & SR_RXNE)
+      {
+         *pucData_ = apstTheSPIControllers[eController_]->DR;
+         pucData_++;
+         uiDataLength_--;
+      }
+   }
+
+   return TRUE;
 }
 
 // -------------------------------------------------------------
@@ -270,48 +284,13 @@ BOOL SPI_Write(
 
    while(uiDataLength_ > 0)
    {
-      while(!(apstTheSPIControllers[eController_]->SR & SR_TXE));
-
-      apstTheSPIControllers[eController_]->DR = *pucData_;
-      pucData_++;
-      uiDataLength_--;
+      if(apstTheSPIControllers[eController_]->SR & SR_TXE)
+      {
+         apstTheSPIControllers[eController_]->DR = *pucData_;
+         pucData_++;
+         uiDataLength_--;
+      }
    }
 
    return TRUE;
-}
-
-// -------------------------------------------------------------
-BOOL SPI_IsEnabled(
-   SPIControllerEnum eController_)
-{
-   if(apstTheSPIControllers[eController_] == NULL)
-   {
-      return FALSE;
-   }
-
-   return (apstTheSPIControllers[eController_]->CR1 & CR1_SPE);
-}
-
-// -------------------------------------------------------------
-BOOL SPI_IsTxBufferEmpty(
-   SPIControllerEnum eController_)
-{
-   if(apstTheSPIControllers[eController_] == NULL)
-   {
-      return FALSE;
-   }
-
-   return (apstTheSPIControllers[eController_]->SR & SR_TXE);
-}
-
-// -------------------------------------------------------------
-BOOL SPI_IsRxBufferEmpty(
-   SPIControllerEnum eController_)
-{
-   if(apstTheSPIControllers[eController_] == NULL)
-   {
-      return FALSE;
-   }
-
-   return !(apstTheSPIControllers[eController_]->SR & SR_RXNE);
 }
