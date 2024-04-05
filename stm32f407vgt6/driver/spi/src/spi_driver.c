@@ -58,7 +58,6 @@ BOOL SPI_Initialize(
       }
       else
       {
-         // TODO
          return FALSE;
       }
    }
@@ -250,47 +249,36 @@ BOOL SPI_GetConfig(
 // -------------------------------------------------------------
 BOOL SPI_Read(
    SPIControllerEnum eController_,
-   UCHAR* pucData_,
-   UINT uiDataLength_)
+   UCHAR* pucData_)
 {
    if(apstTheSPIControllers[eController_] == NULL)
    {
       return FALSE;
    }
 
-   while(uiDataLength_ > 0)
+   if(apstTheSPIControllers[eController_]->SR & SR_RXNE)
    {
-      if(apstTheSPIControllers[eController_]->SR & SR_RXNE)
-      {
-         *pucData_ = apstTheSPIControllers[eController_]->DR;
-         pucData_++;
-         uiDataLength_--;
-      }
+      *pucData_ = apstTheSPIControllers[eController_]->DR;
+      return TRUE;
    }
 
-   return TRUE;
+   return FALSE;
 }
 
 // -------------------------------------------------------------
 BOOL SPI_Write(
    SPIControllerEnum eController_,
-   UCHAR* pucData_,
-   UINT uiDataLength_)
+   UCHAR ucData_)
 {
    if(apstTheSPIControllers[eController_] == NULL)
    {
       return FALSE;
    }
 
-   while(uiDataLength_ > 0)
+   if(apstTheSPIControllers[eController_]->SR & SR_TXE)
    {
-      if(apstTheSPIControllers[eController_]->SR & SR_TXE)
-      {
-         apstTheSPIControllers[eController_]->DR = *pucData_;
-         pucData_++;
-         uiDataLength_--;
-      }
+      apstTheSPIControllers[eController_]->DR = ucData_;
+      return TRUE;
    }
-
-   return TRUE;
+   return FALSE;
 }

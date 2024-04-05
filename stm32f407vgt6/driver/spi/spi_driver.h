@@ -128,15 +128,13 @@ BOOL SPI_Disable(
 // -------------------------------------------------------------
 BOOL SPI_Read(
    SPIControllerEnum eController_,
-   UCHAR* pucData_,
-   UINT uiDataLength_);
+   UCHAR* pucData_);
 
 // -------------------------------------------------------------
 // Write data to the SPI bus.
 // -------------------------------------------------------------
 BOOL SPI_Write(
    SPIControllerEnum eController_,
-   UCHAR* pucData_,
-   UINT uiDataLength_);
+   UCHAR ucData_);
 
 #endif // SPI_DRIVER_H_

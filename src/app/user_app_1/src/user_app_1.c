@@ -63,22 +63,19 @@ BOOL Initialize_UserApp1()
 // -------------------------------------------------------------
 void Run_UserApp1()
 {
-   static UCHAR aucWriteData[1] = {0xAA};
-   static UCHAR aucReadData[1];
+   UCHAR ucData = 0x00;
 
    uiCounter++;
    if(uiCounter > uiMAX_COUNT)
    {
       uiCounter = 0;
-      if(SPI_Write(SPI_SPI1, &aucWriteData[0], 1))
+      if(SPI_Write(SPI_SPI1, 0xAA))
       {
          LED_Toggle(LED_GREEN);
       }
 
-      for(UINT uiCounter2 = 0; uiCounter2 < 0x1000; uiCounter2++)
-
-      if(SPI_Read(SPI_SPI2, &aucReadData[0], 1) &&
-         (aucWriteData[0] == aucReadData[0]))
+      if(SPI_Read(SPI_SPI2, &ucData) &&
+         (0xAA == ucData))
       {
          LED_Toggle(LED_ORANGE);
       }
