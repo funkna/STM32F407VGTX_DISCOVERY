@@ -13,20 +13,20 @@
 // ------------------------------------------------------------------------------------------------
 
 // Drivers
-#include "driver/cortex-m4/nvic/nvic_driver.h"
+#include "drivers/nvic_driver.h"
 
-#include "driver/exti/exti_driver.h"
-#include "driver/gpio/gpio_driver.h"
-#include "driver/rcc/rcc_driver.h"
-#include "driver/spi/spi_driver.h"
-#include "driver/syscfg/syscfg_driver.h"
+#include "drivers/exti_driver.h"
+#include "drivers/gpio_driver.h"
+#include "drivers/rcc_driver.h"
+#include "drivers/spi_driver.h"
+#include "drivers/syscfg_driver.h"
 
 // APIs
-#include "button/button.h"
-#include "led/led.h"
+#include "button.h"
+#include "led.h"
 
 // Apps
-#include "user_app_1/user_app_1.h"
+#include "user_app_1.h"
 
 static BOOL InitializeDriversAndAPI()
 {
@@ -37,11 +37,11 @@ static BOOL InitializeDriversAndAPI()
    bInitSuccess &= NVIC_Initialize();
    bInitSuccess &= EXTI_Initialize();
    bInitSuccess &= SYSCFG_Initialize();
-   bInitSuccess &= GPIO_Initialize(GPIO_GPIOA); // Buttons
-   bInitSuccess &= GPIO_Initialize(GPIO_GPIOB); // SPI
-   bInitSuccess &= GPIO_Initialize(GPIO_GPIOD); // LEDs
-   bInitSuccess &= SPI_Initialize(SPI_SPI1);
-   bInitSuccess &= SPI_Initialize(SPI_SPI2);
+   bInitSuccess &= GPIO_Initialize(GPIO_PORT_A); // Buttons
+   bInitSuccess &= GPIO_Initialize(GPIO_PORT_B); // SPI
+   bInitSuccess &= GPIO_Initialize(GPIO_PORT_D); // LEDs
+   bInitSuccess &= SPI_Initialize(SPI1);
+   bInitSuccess &= SPI_Initialize(SPI2);
 
    // Initialize API
    bInitSuccess &= LED_Initialize();
