@@ -1,4 +1,5 @@
 // Includes ---------------------------------------------------------------------------------------
+#include <string.h>
 #include "devices/spi.h"
 #include "drivers/gpio_driver.h"
 #include "drivers/rcc_driver.h"
@@ -8,8 +9,17 @@
 // Typedefs ---------------------------------------------------------------------------------------
 typedef struct
 {
+   UCHAR* pucReceiveBuffer;
+   UINT uiReceiveBytes;
+   UINT uiRequestedBytes;
+} SPIBuffersStruct;
+
+typedef struct
+{
    SPIRegistersStruct* pstRegisters;
    SPIConfigurationStruct stConfiguration;
+   SPIBuffersStruct stBuffers;
+   SPITransferStateEnum eState;
 } SPIDeviceStruct;
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -20,8 +30,7 @@ static const GPIOConfigurationStruct stTheSPIPinConfig = {
    GPIOPUPD_NONE,
    GPIOALTFUNC_AF5
 };
-static void (*pfSPIReceiveInterruptCallback)(void) = NULL;
-static SPIDeviceStruct astTheSPIDevices[SPI_MAX] = {NULL};
+static SPIDeviceStruct astTheSPIDevices[SPI_MAX] = {0};
 
 // Functions --------------------------------------------------------------------------------------
 static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
@@ -53,9 +62,23 @@ static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
 // -------------------------------------------------------------
 void SPI2_IRQHandler(void)
 {
-   if(pfSPIReceiveInterruptCallback != NULL)
+   UINT uiSPI2_SR = astTheSPIDevices[SPI2].pstRegisters->SR;
+
+   // Receive Interrupt
+   if((uiSPI2_SR & SR_RXNE) &&
+      (astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer != NULL))
    {
-      pfSPIReceiveInterruptCallback();
+      if(SPI_ReadByte(SPI2, astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer))
+      {
+         astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer++;
+         astTheSPIDevices[SPI2].stBuffers.uiReceiveBytes++;
+      }
+
+      if(astTheSPIDevices[SPI2].stBuffers.uiRequestedBytes == astTheSPIDevices[SPI2].stBuffers.uiReceiveBytes)
+      {
+         astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_RXNEIE;
+         astTheSPIDevices[SPI2].eState = SPISTATE_IDLE;
+      }
    }
 }
 
@@ -250,7 +273,7 @@ BOOL SPI_SetConfig(
       uiCR1Value &= ~CR1_SSM;
    }
 
-   if(pstConfiguration_->eSlaveManagement == SPISSI_ENABLE)
+   if(pstConfiguration_->eInternalSelect == SPISSI_ENABLE)
    {
       uiCR1Value |= CR1_SSI;
    }
@@ -289,7 +312,7 @@ SPIConfigurationStruct* SPI_GetConfig(
 }
 
 // -------------------------------------------------------------
-BOOL SPI_Read(
+BOOL SPI_ReadByte(
    SPIControllerEnum eController_,
    UCHAR* pucData_)
 {
@@ -308,7 +331,7 @@ BOOL SPI_Read(
 }
 
 // -------------------------------------------------------------
-BOOL SPI_Write(
+BOOL SPI_WriteByte(
    SPIControllerEnum eController_,
    UCHAR ucData_)
 {
@@ -326,10 +349,48 @@ BOOL SPI_Write(
 }
 
 // -------------------------------------------------------------
-BOOL SPI_ConfigureAsInterrupt(
+BOOL SPI_ReadTransfer(
    SPIControllerEnum eController_,
-   SPIInterruptTypeEnum eType_,
-   void (*fpCallback_)(void))
+   UCHAR* pucReceiveBuffer_,
+   UINT uiRequestedBytes_)
+{
+   // Verify arguments & callback
+   if(astTheSPIDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   if(pucReceiveBuffer_ == NULL)
+   {
+      // Set the buffer
+      astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer = pucReceiveBuffer_;
+      astTheSPIDevices[eController_].stBuffers.uiReceiveBytes = 0;
+      astTheSPIDevices[eController_].stBuffers.uiRequestedBytes = uiRequestedBytes_;
+
+      if(astTheSPIDevices[eController_].eState == SPISTATE_IDLE)
+      {
+         astTheSPIDevices[eController_].eState = SPISTATE_BUSY;
+      }
+
+      // Enable the Receive Not Empty Interrupt Enable bit
+      astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_RXNEIE;
+
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
+// -------------------------------------------------------------
+SPITransferStateEnum SPI_GetTransferState(
+   SPIControllerEnum eController_)
+{
+   return astTheSPIDevices[eController_].eState;
+}
+
+// -------------------------------------------------------------
+BOOL SPI_ConfigureAsInterrupt(
+   SPIControllerEnum eController_)
 {
    if(astTheSPIDevices[eController_].pstRegisters == NULL)
    {
@@ -354,24 +415,7 @@ BOOL SPI_ConfigureAsInterrupt(
          return FALSE;
    }
 
-   astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_RXNEIE;
-
-   switch(eType_)
-   {
-      case SPIINTTYPE_RECEIVE:
-      {
-         if(fpCallback_ != NULL)
-         {
-            pfSPIReceiveInterruptCallback = fpCallback_;
-         }
-         break;
-      }
-      case SPIINTTYPE_TRANSMIT:
-      case SPIINTTYPE_ERROR:
-      default: // Fall-through
-         return FALSE;
-   }
-
+   astTheSPIDevices[eController_].eState = SPISTATE_IDLE;
 
    return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
 }

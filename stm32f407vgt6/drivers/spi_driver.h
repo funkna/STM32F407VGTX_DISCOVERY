@@ -71,13 +71,6 @@ typedef enum
    SPIMULTIMASTER_ENABLE
 } SPIMultiMasterEnum;
 
-typedef enum
-{
-   SPIINTTYPE_RECEIVE = 0,
-   SPIINTTYPE_TRANSMIT,
-   SPIINTTYPE_ERROR
-} SPIInterruptTypeEnum;
-
 typedef struct
 {
    SPIModeEnum eMode;
@@ -90,6 +83,14 @@ typedef struct
    SPISlaveSelectInternalEnum eInternalSelect;
    SPIMultiMasterEnum eMultiMaster;
 } SPIConfigurationStruct;
+
+typedef enum
+{
+   SPISTATE_UNKNOWN = 0,
+   SPISTATE_IDLE,
+   SPISTATE_BUSY,
+   SPISTATE_ERROR
+} SPITransferStateEnum;
 
 // Functions --------------------------------------------------------------------------------------
 
@@ -133,23 +134,35 @@ BOOL SPI_Disable(
 // -------------------------------------------------------------
 // Read data from the SPI bus.
 // -------------------------------------------------------------
-BOOL SPI_Read(
+BOOL SPI_ReadByte(
    SPIControllerEnum eController_,
    UCHAR* pucData_);
 
 // -------------------------------------------------------------
 // Write data to the SPI bus.
 // -------------------------------------------------------------
-BOOL SPI_Write(
+BOOL SPI_WriteByte(
    SPIControllerEnum eController_,
    UCHAR ucData_);
+
+// -------------------------------------------------------------
+// Start a read transfer on the SPI bus.
+// -------------------------------------------------------------
+BOOL SPI_ReadTransfer(
+   SPIControllerEnum eController_,
+   UCHAR* pucReceiveBuffer_,
+   UINT uiRequestedBytes_);
+
+// -------------------------------------------------------------
+// Check the SPI bus transfer state.
+// -------------------------------------------------------------
+SPITransferStateEnum SPI_GetTransferState(
+   SPIControllerEnum eController_);
 
 // -------------------------------------------------------------
 // Enable an interrupt vector for a SPI controller.
 // -------------------------------------------------------------
 BOOL SPI_ConfigureAsInterrupt(
-   SPIControllerEnum eController_,
-   SPIInterruptTypeEnum eType_,
-   void (*fpCallback_)(void));
+   SPIControllerEnum eController_);
 
 #endif // SPI_DRIVER_H_

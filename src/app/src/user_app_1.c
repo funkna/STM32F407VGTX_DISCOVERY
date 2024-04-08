@@ -10,7 +10,7 @@
 #include "user_app_1.h"
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
-static UCHAR ucTheSPIReadByte = 0x00;
+static UCHAR aucTheSPITransferBuffer[64] = {0};
 static UINT uiCounter = 0;
 static const UINT uiMAX_COUNT = 0x10000;
 
@@ -20,17 +20,6 @@ static const UINT uiMAX_COUNT = 0x10000;
 static void ButtonPressCallback(void)
 {
    LED_Toggle(LED_RED);
-}
-
-static void SPIReadCallback(void)
-{
-   ucTheSPIReadByte = 0x00;
-
-   SPI_Read(SPI2, &ucTheSPIReadByte);
-   if(0xAA == ucTheSPIReadByte)
-   {
-      LED_Toggle(LED_ORANGE);
-   }
 }
 
 // -------------------------------------------------------------
@@ -68,8 +57,7 @@ BOOL Initialize_UserApp1()
 
    bSuccess |= SPI_SetConfig(SPI2, &stSPISlaveConfig);
    bSuccess |= SPI_Enable(SPI2);
-
-   bSuccess |= SPI_ConfigureAsInterrupt(SPI2, SPIINTTYPE_RECEIVE, &SPIReadCallback);
+   bSuccess |= SPI_ConfigureAsInterrupt(SPI2);
 
    return bSuccess;
 }
@@ -81,9 +69,15 @@ void Run_UserApp1()
    if(uiCounter > uiMAX_COUNT)
    {
       uiCounter = 0;
-      if(SPI_Write(SPI1, 0xAA))
+      if(SPI_WriteByte(SPI1, 0xAA))
       {
          LED_Toggle(LED_GREEN);
+      }
+
+      SPITransferStateEnum eSPI2State = SPI_GetTransferState(SPI2);
+      if(eSPI2State == SPISTATE_IDLE)
+      {
+         (void)SPI_ReadTransfer(SPI2, &aucTheSPITransferBuffer[0], 4);
       }
    }
 }
