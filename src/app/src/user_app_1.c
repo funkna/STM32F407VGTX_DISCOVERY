@@ -10,7 +10,8 @@
 #include "user_app_1.h"
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
-static UCHAR aucTheSPITransferBuffer[64] = {0};
+static UCHAR aucTheSPIWriteTransferBuffer[] = {0xAA};
+static UCHAR aucTheSPIReadTransferBuffer[64] = {0};
 static UINT uiCounter = 0;
 static const UINT uiMAX_COUNT = 0x10000;
 
@@ -69,15 +70,16 @@ void Run_UserApp1()
    if(uiCounter > uiMAX_COUNT)
    {
       uiCounter = 0;
-      if(SPI_WriteByte(SPI1, 0xAA))
+      LED_Toggle(LED_GREEN);
+
+      if(SPI_GetReceiveTransferState(SPI2) == SPISTATE_IDLE)
       {
-         LED_Toggle(LED_GREEN);
+         (void)SPI_Transfer(SPI2, &aucTheSPIReadTransferBuffer[0], 4, NULL, 0);
       }
 
-      SPITransferStateEnum eSPI2State = SPI_GetTransferState(SPI2);
-      if(eSPI2State == SPISTATE_IDLE)
+      if(SPI_GetTransmitTransferState(SPI2) == SPISTATE_IDLE)
       {
-         (void)SPI_ReadTransfer(SPI2, &aucTheSPITransferBuffer[0], 4);
+         (void)SPI_Transfer(SPI2, NULL, 0, &aucTheSPIWriteTransferBuffer[0], 1);
       }
    }
 }

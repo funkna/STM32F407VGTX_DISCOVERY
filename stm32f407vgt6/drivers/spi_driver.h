@@ -148,15 +148,23 @@ BOOL SPI_WriteByte(
 // -------------------------------------------------------------
 // Start a read transfer on the SPI bus.
 // -------------------------------------------------------------
-BOOL SPI_ReadTransfer(
+BOOL SPI_Transfer(
    SPIControllerEnum eController_,
    UCHAR* pucReceiveBuffer_,
-   UINT uiRequestedBytes_);
+   UINT uiRequestedBytes_,
+   UCHAR* pucTransmiteBuffer_,
+   UINT uiDispatchedBytes_);
 
 // -------------------------------------------------------------
-// Check the SPI bus transfer state.
+// Check the SPI bus transmit transfer state.
 // -------------------------------------------------------------
-SPITransferStateEnum SPI_GetTransferState(
+SPITransferStateEnum SPI_GetTransmitTransferState(
+   SPIControllerEnum eController_);
+
+// -------------------------------------------------------------
+// Check the SPI bus receive transfer state.
+// -------------------------------------------------------------
+SPITransferStateEnum SPI_GetReceiveTransferState(
    SPIControllerEnum eController_);
 
 // -------------------------------------------------------------

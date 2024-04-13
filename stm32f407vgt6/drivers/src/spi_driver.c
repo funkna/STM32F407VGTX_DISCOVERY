@@ -9,9 +9,14 @@
 // Typedefs ---------------------------------------------------------------------------------------
 typedef struct
 {
+   UCHAR* pucTransmitBuffer;
+   UINT uiTransmittedBytes;
+   UINT uiDispatchedBytes;
+   SPITransferStateEnum eTransmitState;
    UCHAR* pucReceiveBuffer;
-   UINT uiReceiveBytes;
+   UINT uiReceivedBytes;
    UINT uiRequestedBytes;
+   SPITransferStateEnum eReceiveState;
 } SPIBuffersStruct;
 
 typedef struct
@@ -19,7 +24,6 @@ typedef struct
    SPIRegistersStruct* pstRegisters;
    SPIConfigurationStruct stConfiguration;
    SPIBuffersStruct stBuffers;
-   SPITransferStateEnum eState;
 } SPIDeviceStruct;
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -71,15 +75,34 @@ void SPI2_IRQHandler(void)
       if(SPI_ReadByte(SPI2, astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer))
       {
          astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer++;
-         astTheSPIDevices[SPI2].stBuffers.uiReceiveBytes++;
+         astTheSPIDevices[SPI2].stBuffers.uiReceivedBytes++;
       }
 
-      if(astTheSPIDevices[SPI2].stBuffers.uiRequestedBytes == astTheSPIDevices[SPI2].stBuffers.uiReceiveBytes)
+      if(astTheSPIDevices[SPI2].stBuffers.uiRequestedBytes == astTheSPIDevices[SPI2].stBuffers.uiReceivedBytes)
       {
          astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_RXNEIE;
-         astTheSPIDevices[SPI2].eState = SPISTATE_IDLE;
+         astTheSPIDevices[SPI2].stBuffers.eReceiveState = SPISTATE_IDLE;
       }
    }
+
+   // Transmit Interrupt
+   if((uiSPI2_SR & SR_TXE) &&
+      (astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer != NULL))
+   {
+      if(SPI_WriteByte(SPI2, *(astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer)))
+      {
+         astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer++;
+         astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes++;
+      }
+
+      if(astTheSPIDevices[SPI2].stBuffers.uiDispatchedBytes == astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes)
+      {
+         astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_TXEIE;
+         astTheSPIDevices[SPI2].stBuffers.eTransmitState = SPISTATE_IDLE;
+      }
+   }
+
+   // TODO: Error bits
 }
 
 // -------------------------------------------------------------
@@ -349,10 +372,12 @@ BOOL SPI_WriteByte(
 }
 
 // -------------------------------------------------------------
-BOOL SPI_ReadTransfer(
+BOOL SPI_Transfer(
    SPIControllerEnum eController_,
    UCHAR* pucReceiveBuffer_,
-   UINT uiRequestedBytes_)
+   UINT uiRequestedBytes_,
+   UCHAR* pucTransmiteBuffer_,
+   UINT uiDispatchedBytes_)
 {
    // Verify arguments & callback
    if(astTheSPIDevices[eController_].pstRegisters == NULL)
@@ -360,16 +385,16 @@ BOOL SPI_ReadTransfer(
       return FALSE;
    }
 
-   if(pucReceiveBuffer_ == NULL)
+   if(pucReceiveBuffer_ != NULL)
    {
       // Set the buffer
       astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer = pucReceiveBuffer_;
-      astTheSPIDevices[eController_].stBuffers.uiReceiveBytes = 0;
+      astTheSPIDevices[eController_].stBuffers.uiReceivedBytes = 0;
       astTheSPIDevices[eController_].stBuffers.uiRequestedBytes = uiRequestedBytes_;
 
-      if(astTheSPIDevices[eController_].eState == SPISTATE_IDLE)
+      if(astTheSPIDevices[eController_].stBuffers.eReceiveState == SPISTATE_IDLE)
       {
-         astTheSPIDevices[eController_].eState = SPISTATE_BUSY;
+         astTheSPIDevices[eController_].stBuffers.eReceiveState = SPISTATE_BUSY;
       }
 
       // Enable the Receive Not Empty Interrupt Enable bit
@@ -378,14 +403,39 @@ BOOL SPI_ReadTransfer(
       return TRUE;
    }
 
+   if(pucTransmiteBuffer_ != NULL)
+   {
+      // Set the buffer
+      astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer = pucTransmiteBuffer_;
+      astTheSPIDevices[eController_].stBuffers.uiTransmittedBytes = 0;
+      astTheSPIDevices[eController_].stBuffers.uiDispatchedBytes = uiDispatchedBytes_;
+
+      if(astTheSPIDevices[eController_].stBuffers.eTransmitState == SPISTATE_IDLE)
+      {
+         astTheSPIDevices[eController_].stBuffers.eTransmitState = SPISTATE_BUSY;
+      }
+
+      // Enable the Transmit Empty Interrupt Enable bit
+      astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_TXEIE;
+
+      return TRUE;
+   }
+
    return FALSE;
 }
 
 // -------------------------------------------------------------
-SPITransferStateEnum SPI_GetTransferState(
+SPITransferStateEnum SPI_GetTransmitTransferState(
    SPIControllerEnum eController_)
 {
-   return astTheSPIDevices[eController_].eState;
+   return astTheSPIDevices[eController_].stBuffers.eTransmitState;
+}
+
+// -------------------------------------------------------------
+SPITransferStateEnum SPI_GetReceiveTransferState(
+   SPIControllerEnum eController_)
+{
+   return astTheSPIDevices[eController_].stBuffers.eReceiveState;
 }
 
 // -------------------------------------------------------------
@@ -415,7 +465,8 @@ BOOL SPI_ConfigureAsInterrupt(
          return FALSE;
    }
 
-   astTheSPIDevices[eController_].eState = SPISTATE_IDLE;
+   astTheSPIDevices[eController_].stBuffers.eTransmitState = SPISTATE_IDLE;
+   astTheSPIDevices[eController_].stBuffers.eReceiveState = SPISTATE_IDLE;
 
    return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
 }
