@@ -61,26 +61,25 @@ static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
 }
 
 // -------------------------------------------------------------
-// Handle the EXTI0 interrupt here, as it routed to the button.
-// -------------------------------------------------------------
-void SPI2_IRQHandler(void)
+static void SPI_IRQHandler(
+   SPIControllerEnum eController_)
 {
-   UINT uiSPI2_SR = astTheSPIDevices[SPI2].pstRegisters->SR;
+   UINT uiSPI2_SR = astTheSPIDevices[eController_].pstRegisters->SR;
 
    // Receive Interrupt
    if((uiSPI2_SR & SR_RXNE) &&
-      (astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer != NULL))
+      (astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer != NULL))
    {
-      if(SPI_ReadByte(SPI2, astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer))
+      if(SPI_ReadByte(eController_, astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer))
       {
-         astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer++;
-         astTheSPIDevices[SPI2].stBuffers.uiReceivedBytes++;
+         astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer++;
+         astTheSPIDevices[eController_].stBuffers.uiReceivedBytes++;
       }
 
-      if(astTheSPIDevices[SPI2].stBuffers.uiRequestedBytes == astTheSPIDevices[SPI2].stBuffers.uiReceivedBytes)
+      if(astTheSPIDevices[eController_].stBuffers.uiRequestedBytes == astTheSPIDevices[eController_].stBuffers.uiReceivedBytes)
       {
-         astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_RXNEIE;
-         astTheSPIDevices[SPI2].ucSPIStates &= ~SPISTATE_RX_BUSY;
+         astTheSPIDevices[eController_].pstRegisters->CR2 &= ~CR2_RXNEIE;
+         astTheSPIDevices[eController_].ucSPIStates &= ~SPISTATE_RX_BUSY;
       }
    }
 
@@ -88,20 +87,38 @@ void SPI2_IRQHandler(void)
    if((uiSPI2_SR & SR_TXE) &&
       (astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer != NULL))
    {
-      if(SPI_WriteByte(SPI2, *(astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer)))
+      if(SPI_WriteByte(eController_, *(astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer)))
       {
-         astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer++;
-         astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes++;
+         astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer++;
+         astTheSPIDevices[eController_].stBuffers.uiTransmittedBytes++;
       }
 
-      if(astTheSPIDevices[SPI2].stBuffers.uiDispatchedBytes == astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes)
+      if(astTheSPIDevices[eController_].stBuffers.uiDispatchedBytes == astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes)
       {
-         astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_TXEIE;
-         astTheSPIDevices[SPI2].ucSPIStates &= ~SPISTATE_TX_BUSY;
+         astTheSPIDevices[eController_].pstRegisters->CR2 &= ~CR2_TXEIE;
+         astTheSPIDevices[eController_].ucSPIStates &= ~SPISTATE_TX_BUSY;
       }
    }
 
    // TODO: Error bits
+}
+
+// -------------------------------------------------------------
+// SPI IRQ Vector Callbacks
+// -------------------------------------------------------------
+void SPI1_IRQHandler(void)
+{
+   SPI_IRQHandler(SPI1);
+}
+
+void SPI2_IRQHandler(void)
+{
+   SPI_IRQHandler(SPI2);
+}
+
+void SPI3_IRQHandler(void)
+{
+   SPI_IRQHandler(SPI3);
 }
 
 // -------------------------------------------------------------
