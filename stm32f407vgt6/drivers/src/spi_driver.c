@@ -12,11 +12,9 @@ typedef struct
    UCHAR* pucTransmitBuffer;
    UINT uiTransmittedBytes;
    UINT uiDispatchedBytes;
-   SPITransferStateEnum eTransmitState;
    UCHAR* pucReceiveBuffer;
    UINT uiReceivedBytes;
    UINT uiRequestedBytes;
-   SPITransferStateEnum eReceiveState;
 } SPIBuffersStruct;
 
 typedef struct
@@ -24,6 +22,7 @@ typedef struct
    SPIRegistersStruct* pstRegisters;
    SPIConfigurationStruct stConfiguration;
    SPIBuffersStruct stBuffers;
+   UCHAR ucSPIStates;
 } SPIDeviceStruct;
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -81,7 +80,7 @@ void SPI2_IRQHandler(void)
       if(astTheSPIDevices[SPI2].stBuffers.uiRequestedBytes == astTheSPIDevices[SPI2].stBuffers.uiReceivedBytes)
       {
          astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_RXNEIE;
-         astTheSPIDevices[SPI2].stBuffers.eReceiveState = SPISTATE_IDLE;
+         astTheSPIDevices[SPI2].ucSPIStates &= ~SPISTATE_RX_BUSY;
       }
    }
 
@@ -98,7 +97,7 @@ void SPI2_IRQHandler(void)
       if(astTheSPIDevices[SPI2].stBuffers.uiDispatchedBytes == astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes)
       {
          astTheSPIDevices[SPI2].pstRegisters->CR2 &= ~CR2_TXEIE;
-         astTheSPIDevices[SPI2].stBuffers.eTransmitState = SPISTATE_IDLE;
+         astTheSPIDevices[SPI2].ucSPIStates &= ~SPISTATE_TX_BUSY;
       }
    }
 
@@ -385,17 +384,16 @@ BOOL SPI_Transfer(
       return FALSE;
    }
 
-   if(pucReceiveBuffer_ != NULL)
+   // Start receive transfer
+   if((pucReceiveBuffer_ != NULL) &&
+      !(astTheSPIDevices[eController_].ucSPIStates & SPISTATE_RX_BUSY))
    {
       // Set the buffer
       astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer = pucReceiveBuffer_;
       astTheSPIDevices[eController_].stBuffers.uiReceivedBytes = 0;
       astTheSPIDevices[eController_].stBuffers.uiRequestedBytes = uiRequestedBytes_;
 
-      if(astTheSPIDevices[eController_].stBuffers.eReceiveState == SPISTATE_IDLE)
-      {
-         astTheSPIDevices[eController_].stBuffers.eReceiveState = SPISTATE_BUSY;
-      }
+      astTheSPIDevices[eController_].ucSPIStates &= SPISTATE_RX_BUSY;
 
       // Enable the Receive Not Empty Interrupt Enable bit
       astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_RXNEIE;
@@ -403,17 +401,16 @@ BOOL SPI_Transfer(
       return TRUE;
    }
 
-   if(pucTransmiteBuffer_ != NULL)
+   // Start transmit transfer
+   if((pucTransmiteBuffer_ != NULL) &&
+      !(astTheSPIDevices[eController_].ucSPIStates & SPISTATE_TX_BUSY))
    {
       // Set the buffer
       astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer = pucTransmiteBuffer_;
       astTheSPIDevices[eController_].stBuffers.uiTransmittedBytes = 0;
       astTheSPIDevices[eController_].stBuffers.uiDispatchedBytes = uiDispatchedBytes_;
 
-      if(astTheSPIDevices[eController_].stBuffers.eTransmitState == SPISTATE_IDLE)
-      {
-         astTheSPIDevices[eController_].stBuffers.eTransmitState = SPISTATE_BUSY;
-      }
+      astTheSPIDevices[eController_].ucSPIStates &= SPISTATE_TX_BUSY;
 
       // Enable the Transmit Empty Interrupt Enable bit
       astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_TXEIE;
@@ -425,17 +422,10 @@ BOOL SPI_Transfer(
 }
 
 // -------------------------------------------------------------
-SPITransferStateEnum SPI_GetTransmitTransferState(
+SPITransferStateEnum SPI_GetStates(
    SPIControllerEnum eController_)
 {
-   return astTheSPIDevices[eController_].stBuffers.eTransmitState;
-}
-
-// -------------------------------------------------------------
-SPITransferStateEnum SPI_GetReceiveTransferState(
-   SPIControllerEnum eController_)
-{
-   return astTheSPIDevices[eController_].stBuffers.eReceiveState;
+   return astTheSPIDevices[eController_].ucSPIStates;
 }
 
 // -------------------------------------------------------------
@@ -465,8 +455,7 @@ BOOL SPI_ConfigureAsInterrupt(
          return FALSE;
    }
 
-   astTheSPIDevices[eController_].stBuffers.eTransmitState = SPISTATE_IDLE;
-   astTheSPIDevices[eController_].stBuffers.eReceiveState = SPISTATE_IDLE;
+   astTheSPIDevices[eController_].ucSPIStates = SPISTATE_IDLE;
 
    return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
 }

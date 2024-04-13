@@ -86,10 +86,10 @@ typedef struct
 
 typedef enum
 {
-   SPISTATE_UNKNOWN = 0,
-   SPISTATE_IDLE,
-   SPISTATE_BUSY,
-   SPISTATE_ERROR
+   SPISTATE_IDLE = 0x00,
+   SPISTATE_TX_BUSY = 0x01,
+   SPISTATE_RX_BUSY = 0x02,
+   SPISTATE_ERROR = 0x04
 } SPITransferStateEnum;
 
 // Functions --------------------------------------------------------------------------------------
@@ -156,15 +156,9 @@ BOOL SPI_Transfer(
    UINT uiDispatchedBytes_);
 
 // -------------------------------------------------------------
-// Check the SPI bus transmit transfer state.
+// Check the SPI bus states.
 // -------------------------------------------------------------
-SPITransferStateEnum SPI_GetTransmitTransferState(
-   SPIControllerEnum eController_);
-
-// -------------------------------------------------------------
-// Check the SPI bus receive transfer state.
-// -------------------------------------------------------------
-SPITransferStateEnum SPI_GetReceiveTransferState(
+SPITransferStateEnum SPI_GetStates(
    SPIControllerEnum eController_);
 
 // -------------------------------------------------------------

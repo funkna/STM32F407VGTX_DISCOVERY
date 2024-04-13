@@ -70,16 +70,17 @@ void Run_UserApp1()
    if(uiCounter > uiMAX_COUNT)
    {
       uiCounter = 0;
-      LED_Toggle(LED_GREEN);
 
-      if(SPI_GetReceiveTransferState(SPI2) == SPISTATE_IDLE)
+      if(!(SPI_GetStates(SPI2) & SPISTATE_RX_BUSY))
       {
+         LED_Toggle(LED_GREEN);
          (void)SPI_Transfer(SPI2, &aucTheSPIReadTransferBuffer[0], 4, NULL, 0);
       }
 
-      if(SPI_GetTransmitTransferState(SPI2) == SPISTATE_IDLE)
+      if(!(SPI_GetStates(SPI1) & SPISTATE_TX_BUSY))
       {
-         (void)SPI_Transfer(SPI2, NULL, 0, &aucTheSPIWriteTransferBuffer[0], 1);
+         LED_Toggle(LED_ORANGE);
+         (void)SPI_Transfer(SPI1, NULL, 0, &aucTheSPIWriteTransferBuffer[0], 1);
       }
    }
 }
