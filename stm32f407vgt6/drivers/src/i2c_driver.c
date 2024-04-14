@@ -9,6 +9,7 @@
 typedef struct
 {
    I2CRegistersStruct* pstRegisters;
+   I2CConfigurationStruct stConfiguration;
 } I2CDeviceStruct;
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -85,3 +86,67 @@ BOOL I2C_Reset(
 {
    return RCC_ResetPeripheralClock(I2CEnumToSTM32Enum(eController_));
 }
+
+// -------------------------------------------------------------
+BOOL I2C_Enable(
+   I2CControllerEnum eController_)
+{
+   if(astTheI2CDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   astTheI2CDevices[eController_].pstRegisters->CR1 |= CR1_PE;
+   return TRUE;
+}
+
+// -------------------------------------------------------------
+BOOL I2C_Disable(
+   I2CControllerEnum eController_)
+{
+   if(astTheI2CDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   astTheI2CDevices[eController_].pstRegisters->CR1 &= ~CR1_PE;
+   return TRUE;
+}
+
+// -------------------------------------------------------------
+BOOL I2C_SetConfig(
+   I2CControllerEnum eController_,
+   const I2CConfigurationStruct* pstConfiguration_)
+{
+   if((astTheI2CDevices[eController_].pstRegisters == NULL) ||
+      (pstConfiguration_ == NULL))
+   {
+      return FALSE;
+   }
+
+   UINT uiCR1Value = astTheI2CDevices[eController_].pstRegisters->CR1;
+   UINT uiCR2Value = astTheI2CDevices[eController_].pstRegisters->CR2;
+
+   // TODO: What are the configs?  Set them.
+
+   astTheI2CDevices[eController_].pstRegisters->CR1 = uiCR1Value;
+   astTheI2CDevices[eController_].pstRegisters->CR2 = uiCR2Value;
+
+   memcpy(&(astTheI2CDevices[eController_].stConfiguration), pstConfiguration_, sizeof(I2CConfigurationStruct));
+
+   return TRUE;
+}
+
+// -------------------------------------------------------------
+I2CConfigurationStruct* I2C_GetConfig(
+   I2CControllerEnum eController_)
+{
+   if(astTheI2CDevices[eController_].pstRegisters == NULL)
+   {
+      return NULL;
+   }
+
+   return &(astTheI2CDevices[eController_].stConfiguration);
+}
+
+
