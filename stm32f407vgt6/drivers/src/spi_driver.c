@@ -64,13 +64,13 @@ static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
 static void SPI_IRQHandler(
    SPIControllerEnum eController_)
 {
-   UINT uiSPI2_SR = astTheSPIDevices[eController_].pstRegisters->SR;
+   UINT uiSPI_SR = astTheSPIDevices[eController_].pstRegisters->SR;
 
    // Receive Interrupt
-   if((uiSPI2_SR & SR_RXNE) &&
+   if((uiSPI_SR & SR_RXNE) &&
       (astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer != NULL))
    {
-      if(SPI_ReadByte(eController_, astTheSPIDevices[SPI2].stBuffers.pucReceiveBuffer))
+      if(SPI_ReadByte(eController_, astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer))
       {
          astTheSPIDevices[eController_].stBuffers.pucReceiveBuffer++;
          astTheSPIDevices[eController_].stBuffers.uiReceivedBytes++;
@@ -84,16 +84,16 @@ static void SPI_IRQHandler(
    }
 
    // Transmit Interrupt
-   if((uiSPI2_SR & SR_TXE) &&
-      (astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer != NULL))
+   if((uiSPI_SR & SR_TXE) &&
+      (astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer != NULL))
    {
-      if(SPI_WriteByte(eController_, *(astTheSPIDevices[SPI2].stBuffers.pucTransmitBuffer)))
+      if(SPI_WriteByte(eController_, *(astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer)))
       {
          astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer++;
          astTheSPIDevices[eController_].stBuffers.uiTransmittedBytes++;
       }
 
-      if(astTheSPIDevices[eController_].stBuffers.uiDispatchedBytes == astTheSPIDevices[SPI2].stBuffers.uiTransmittedBytes)
+      if(astTheSPIDevices[eController_].stBuffers.uiDispatchedBytes == astTheSPIDevices[eController_].stBuffers.uiTransmittedBytes)
       {
          astTheSPIDevices[eController_].pstRegisters->CR2 &= ~CR2_TXEIE;
          astTheSPIDevices[eController_].ucSPIStates &= ~SPISTATE_TX_BUSY;
@@ -392,7 +392,7 @@ BOOL SPI_Transfer(
    SPIControllerEnum eController_,
    UCHAR* pucReceiveBuffer_,
    UINT uiRequestedBytes_,
-   UCHAR* pucTransmiteBuffer_,
+   UCHAR* pucTransmitBuffer_,
    UINT uiDispatchedBytes_)
 {
    // Verify arguments & callback
@@ -410,7 +410,7 @@ BOOL SPI_Transfer(
       astTheSPIDevices[eController_].stBuffers.uiReceivedBytes = 0;
       astTheSPIDevices[eController_].stBuffers.uiRequestedBytes = uiRequestedBytes_;
 
-      astTheSPIDevices[eController_].ucSPIStates &= SPISTATE_RX_BUSY;
+      astTheSPIDevices[eController_].ucSPIStates |= SPISTATE_RX_BUSY;
 
       // Enable the Receive Not Empty Interrupt Enable bit
       astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_RXNEIE;
@@ -419,15 +419,15 @@ BOOL SPI_Transfer(
    }
 
    // Start transmit transfer
-   if((pucTransmiteBuffer_ != NULL) &&
+   if((pucTransmitBuffer_ != NULL) &&
       !(astTheSPIDevices[eController_].ucSPIStates & SPISTATE_TX_BUSY))
    {
       // Set the buffer
-      astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer = pucTransmiteBuffer_;
+      astTheSPIDevices[eController_].stBuffers.pucTransmitBuffer = pucTransmitBuffer_;
       astTheSPIDevices[eController_].stBuffers.uiTransmittedBytes = 0;
       astTheSPIDevices[eController_].stBuffers.uiDispatchedBytes = uiDispatchedBytes_;
 
-      astTheSPIDevices[eController_].ucSPIStates &= SPISTATE_TX_BUSY;
+      astTheSPIDevices[eController_].ucSPIStates |= SPISTATE_TX_BUSY;
 
       // Enable the Transmit Empty Interrupt Enable bit
       astTheSPIDevices[eController_].pstRegisters->CR2 |= CR2_TXEIE;

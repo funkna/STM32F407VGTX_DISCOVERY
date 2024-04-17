@@ -152,7 +152,7 @@ BOOL SPI_Transfer(
    SPIControllerEnum eController_,
    UCHAR* pucReceiveBuffer_,
    UINT uiRequestedBytes_,
-   UCHAR* pucTransmiteBuffer_,
+   UCHAR* pucTransmitBuffer_,
    UINT uiDispatchedBytes_);
 
 // -------------------------------------------------------------
