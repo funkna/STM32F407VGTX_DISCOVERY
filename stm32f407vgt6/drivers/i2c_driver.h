@@ -11,22 +11,28 @@
 
 typedef enum
 {
-   I2CADDRLEN_7BIT = 0,
-   I2CADDRLEN_10BIT
-} I2CAddressLengthEnum;
+   I2CACK_DISABLE = 0,
+   I2CACK_ENABLE
+} I2CAcknowledgeModeEnum;
 
 typedef enum
 {
-   I2CADDRMODE_SINGLE = 0,
-   I2CADDRMODE_DUAL
-} I2CAddressModeEnum;
+   I2CDUTY_2 = 0,
+   I2CDUTY_16_9,
+} I2CDutyCycleEnum;
+
+typedef enum
+{
+   I2CCLK_SM_100KHZ = 0,
+   I2CCLK_FM_200KHZ
+} I2CClockSpeedEnum;
 
 typedef struct
 {
-   I2CAddressLengthEnum eAddrLength;
-   USHORT usAddress1;
-   I2CAddressModeEnum eAddrMode;
-   USHORT usAddress2;
+   UCHAR ucAddress;
+   I2CAcknowledgeModeEnum eAckMode;
+   I2CDutyCycleEnum eDutyCycle;
+   I2CClockSpeedEnum eClockSpeed;
 } I2CConfigurationStruct;
 
 // Functions --------------------------------------------------------------------------------------

@@ -2,6 +2,12 @@
 #define STM32F407VGT6_H_
 
 //--------------------------------------------------------------
+// Internal oscillator frequency
+//--------------------------------------------------------------
+#define HSI_RC_CLK_FREQ_MHZ      (16)
+#define HSI_RC_CLK_FREQ_HZ       (16000000)
+
+//--------------------------------------------------------------
 // Base addresses and sizes for memory blocks.
 //--------------------------------------------------------------
 #define MEMORY_BLOCK_SRAM2_SIZE                    (0x00004000UL)

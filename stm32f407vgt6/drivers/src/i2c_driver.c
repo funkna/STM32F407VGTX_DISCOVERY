@@ -126,11 +126,83 @@ BOOL I2C_SetConfig(
 
    UINT uiCR1Value = astTheI2CDevices[eController_].pstRegisters->CR1;
    UINT uiCR2Value = astTheI2CDevices[eController_].pstRegisters->CR2;
+   UINT uiCCRValue = astTheI2CDevices[eController_].pstRegisters->CCR;
+   UINT uiOAR1Value = astTheI2CDevices[eController_].pstRegisters->OAR1;
 
-   // TODO: What are the configs?  Set them.
+   // TODO: Support 10-bit addresses and dual addresses.
+   uiOAR1Value |= pstConfiguration_->ucAddress << OAR1_ADD_7_1_OFFSET;
+
+   if(pstConfiguration_->eAckMode == I2CACK_ENABLE)
+   {
+      uiCR1Value |= CR1_ACK;
+   }
+   else
+   {
+      uiCR1Value &= ~CR1_ACK;
+   }
+
+
+   uiCR2Value |= (CR2_FREQ & HSI_RC_CLK_FREQ_MHZ);
+
+   switch(pstConfiguration_->eClockSpeed)
+   {
+      case I2CCLK_SM_100KHZ:
+      {
+         // For Standard Mode:
+         // T_high = T_low = CCR * T_PCLK1
+         // T_high = (1/100kHz)/2 = 5us
+         // T_PCLK1 = (1/16MHz) = 0.0625us
+         // 5us/0.0625us = 80
+         // CCR = 80
+         uiCCRValue |= (CCR_CCR & 80);
+         uiCCRValue &= ~CCR_FS;
+         break;
+      }
+      case I2CCLK_FM_200KHZ:
+      {
+         if(pstConfiguration_->eDutyCycle == I2CDUTY_2)
+         {
+            // For Fast Mode and Duty Cycle 2:1:
+            // T_high = CCR * T_PCLK1
+            // T_low = 2 * CCR * T_PCLK1
+            // T_high + T_low = 3 * CCR * T_PCLK1
+            // T_high + T_low = (1/200kHz) = 5us
+            // T_PCLK1 = (1/16MHz) = 0.0625us
+            // 5us/0.0625us = 3 * CCR = 80 = 3 * 26
+            // CCR = 26
+            uiCCRValue |= (CCR_CCR & 26);
+            uiCCRValue |= CCR_FS;
+            uiCCRValue &= ~CCR_DUTY;
+         }
+         else if(pstConfiguration_->eDutyCycle == I2CDUTY_16_9)
+         {
+            // For Fast Mode and Duty Cycle 16:9:
+            // T_high = 9 * CCR * T_PCLK1
+            // T_low = 16 * CCR * T_PCLK1
+            // T_high + T_low = 25 * CCR * T_PCLK1
+            // T_high + T_low = (1/200kHz) = 5us
+            // T_PCLK1 = (1/16MHz) = 0.0625us
+            // 5us/0.0625us = 25 * CCR = calc = 25 * 3
+            // CCR = 3
+            uiCCRValue |= (CCR_CCR & 3);
+            uiCCRValue |= CCR_FS;
+            uiCCRValue &= ~CCR_DUTY;
+
+         }
+         uiCCRValue |= CCR_FS;
+         uiCCRValue |= (CCR_CCR & pstConfiguration_->eClockSpeed);
+         break;
+      }
+      default:
+      {
+         return FALSE;
+      }
+   }
 
    astTheI2CDevices[eController_].pstRegisters->CR1 = uiCR1Value;
    astTheI2CDevices[eController_].pstRegisters->CR2 = uiCR2Value;
+   astTheI2CDevices[eController_].pstRegisters->CCR = uiCCRValue;
+   astTheI2CDevices[eController_].pstRegisters->OAR1 = uiOAR1Value;
 
    memcpy(&(astTheI2CDevices[eController_].stConfiguration), pstConfiguration_, sizeof(I2CConfigurationStruct));
 

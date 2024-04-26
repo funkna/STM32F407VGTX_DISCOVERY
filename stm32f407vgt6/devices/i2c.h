@@ -12,7 +12,19 @@
 //--------------------------------------------------------------
 // I2C Controller Register Bitmasks
 //--------------------------------------------------------------
+#define CR1_ACK               (0x01UL << 10) // Acknowledge enable
+#define CR1_STOP              (0x01UL << 9)  // Stop generation
+#define CR1_START             (0x01UL << 8)  // Start generation
 #define CR1_PE                (0x01UL << 0)  // I2C enable
+#define CR2_ITBUFEN           (0x01UL << 10) // Buffer interrupt enable
+#define CR2_ITEVTEN           (0x01UL << 9)  // Event interrupt enable
+#define CR2_ITERREN           (0x01UL << 8)  // Error interrupt enable
+#define CR2_FREQ              (0x3FUL << 0)  // Peripheral clock frequency
+#define CCR_FS                (0x01UL << 15)  // I2C master mode selection
+#define CCR_DUTY              (0x01UL << 14)  // Fast mode duty cycle
+#define CCR_CCR               (0x7FFUL << 0) // Clock control register in Fm/Sm mode (Master mode)
+#define OAR1_ADD_7_1          (0x7FUL << 1)
+#define OAR1_ADD_7_1_OFFSET   (1)
 
 // Typedefs ---------------------------------------------------------------------------------------
 
