@@ -578,20 +578,20 @@ ClockSourceEnum RCC_GetSystemClockSource()
 }
 
 //--------------------------------------------------------------
-ULONG RCC_GetClockFrequency(
+UINT RCC_GetClockFrequency(
    ClockTypeEnum eClockType_)
 {
-   ULONG ulClockSourceFrequencyHz = 0;
+   UINT uiClockSourceFrequencyHz = 0;
    switch(RCC_GetSystemClockSource())
    {
       case CLKSRC_HSI:
       {
-         ulClockSourceFrequencyHz = HSI_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
+         uiClockSourceFrequencyHz = HSI_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
          break;
       }
       case CLKSRC_HSE:
       {
-         ulClockSourceFrequencyHz = HSE_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
+         uiClockSourceFrequencyHz = HSE_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
          break;
       }
       case CLKSRC_PLL: // TODO: Implement this.
@@ -601,7 +601,7 @@ ULONG RCC_GetClockFrequency(
       }
    }
 
-   if(ulClockSourceFrequencyHz == 0)
+   if(uiClockSourceFrequencyHz == 0)
    {
       return 0; // Cannot do anything without this being determined.
    }
@@ -609,7 +609,7 @@ ULONG RCC_GetClockFrequency(
    UCHAR ucAHBPrescaler = 1;
    UCHAR ucAPBPrescaler = 1;
    UCHAR ucTemp = 0;
-   ULONG ulClockFrequency = 0;
+   UINT uiClockFrequency = 0;
    switch(eClockType_)
    {
       case CLKTYPE_PCLK1:
@@ -626,7 +626,7 @@ ULONG RCC_GetClockFrequency(
             ucAPBPrescaler = aucAPB_PRESCALERS[ucTemp - NUM_APB_PRESCALERS];
          }
 
-         ulClockFrequency = (ulClockSourceFrequencyHz / ucAHBPrescaler) / ucAPBPrescaler;
+         uiClockFrequency = (uiClockSourceFrequencyHz / ucAHBPrescaler) / ucAPBPrescaler;
          break;
       }
       default:
@@ -634,5 +634,5 @@ ULONG RCC_GetClockFrequency(
          break;
       }
    }
-   return ulClockFrequency;
+   return uiClockFrequency;
 }

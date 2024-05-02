@@ -4,18 +4,68 @@
 
 #include "drivers/nvic_driver.h"
 #include "drivers/exti_driver.h"
-#include "drivers/spi_driver.h"
+// #include "drivers/spi_driver.h"
 #include "drivers/syscfg_driver.h"
+#include "drivers/i2c_driver.h"
 
 #include "user_app_1.h"
 
+// Defines ----------------------------------------------------------------------------------------
+#define AARDVARK_I2C_PORT_EXPANDER_ADDRESS   (0x38) // This can be configured by the hardware jumper.
+#define AARDVARK_I2C_CMD_INPUT_REGISTER      (0x00)
+#define AARDVARK_I2C_CMD_OUTPUT_REGISTER     (0x01)
+#define AARDVARK_I2C_CMD_POLARITY_REGISTER   (0x02)
+#define AARDVARK_I2C_CMD_CONFIG_REGISTER     (0x03)
+#define AARDVARK_I2C_PORT_ALL_PINS           (0xFF)
+
 // Statics, Externs & Globals ---------------------------------------------------------------------
-static UCHAR aucTheSPIWriteTransferBuffer[] = {0xAA};
-static UCHAR aucTheSPIReadTransferBuffer[64] = {0};
 static UINT uiCounter = 0;
 static const UINT uiMAX_COUNT = 0x10000;
 
 // Functions --------------------------------------------------------------------------------------
+
+// -------------------------------------------------------------
+static BOOL InitializeAardvark(void)
+{
+   const UINT uiCONFIG_COMMAND_LENGTH = 2;
+   UCHAR aucConfigureIODirectionCommand[] = {
+      AARDVARK_I2C_CMD_CONFIG_REGISTER,
+      ~AARDVARK_I2C_PORT_ALL_PINS
+   };
+
+   return I2C_WriteData(I2C1, I2CMODE_MASTER, AARDVARK_I2C_PORT_EXPANDER_ADDRESS, &aucConfigureIODirectionCommand[0], uiCONFIG_COMMAND_LENGTH);
+}
+
+// -------------------------------------------------------------
+static BOOL WriteOutputAardvark(
+   UCHAR ucValue_)
+{
+   const UINT uiWRITE_OUTPUT_COMMAND_LENGTH = 2;
+   UCHAR aucWriteIODirectionCommand[] = {
+      AARDVARK_I2C_CMD_OUTPUT_REGISTER,
+      ucValue_
+   };
+
+   return I2C_WriteData(I2C1, I2CMODE_MASTER, AARDVARK_I2C_PORT_EXPANDER_ADDRESS, &aucWriteIODirectionCommand[0], uiWRITE_OUTPUT_COMMAND_LENGTH);
+}
+
+// -------------------------------------------------------------
+static BOOL ReadOutputAardvark(
+   UCHAR* pucValue_)
+{
+   if(pucValue_ == NULL)
+   {
+      return FALSE;
+   }
+
+   const UINT uiREAD_OUTPUT_COMMAND_LENGTH = 1;
+   UCHAR aucReadIODirectionCommand[] = {
+      AARDVARK_I2C_CMD_OUTPUT_REGISTER
+   };
+
+   // Utilizing repeated START here, but alternatively an entirely different I2C Write transaction could be performed here.
+   return I2C_ReadData(I2C1, I2CMODE_MASTER, AARDVARK_I2C_PORT_EXPANDER_ADDRESS, &aucReadIODirectionCommand[0], uiREAD_OUTPUT_COMMAND_LENGTH, pucValue_, 1);
+}
 
 // -------------------------------------------------------------
 static void ButtonPressCallback(void)
@@ -29,37 +79,17 @@ BOOL Initialize_UserApp1()
    BOOL bSuccess = TRUE;
    bSuccess |= Button_ConfigureAsInterrupt(BUTTON_PRESS, &ButtonPressCallback);
 
-   SPIConfigurationStruct stSPIMasterConfig = {
-      SPIMODE_MASTER,
-      SPIBUS_FULL_DUPLEX,
-      SPICLK_PRESCALARDIV_2,
-      SPICPOL_IDLE_LO,
-      SPICPHA_RISE,
-      SPIDFF_8BITS,
-      SPISSM_ENABLE,
-      SPISSI_ENABLE,
-      SPIMULTIMASTER_DISABLE
+   I2CConfigurationStruct stI2CMasterConfig = {
+      I2C1_DEVICE_ADDRESS,
+      I2CACK_ENABLE,
+      I2CDUTY_NONE,
+      I2CCLK_SM_100KHZ
    };
 
-   bSuccess |= SPI_SetConfig(SPI1, &stSPIMasterConfig);
-   bSuccess |= SPI_Enable(SPI1);
-   bSuccess |= SPI_ConfigureAsInterrupt(SPI1);
+   bSuccess |= I2C_SetConfig(I2C1, &stI2CMasterConfig);
+   bSuccess |= I2C_Enable(I2C1);
 
-   SPIConfigurationStruct stSPISlaveConfig = {
-      SPIMODE_SLAVE,
-      SPIBUS_FULL_DUPLEX,
-      SPICLK_PRESCALARDIV_2,
-      SPICPOL_IDLE_LO,
-      SPICPHA_RISE,
-      SPIDFF_8BITS,
-      SPISSM_DISABLE,
-      SPISSI_DISABLE,
-      SPIMULTIMASTER_DISABLE
-   };
-
-   bSuccess |= SPI_SetConfig(SPI2, &stSPISlaveConfig);
-   bSuccess |= SPI_Enable(SPI2);
-   bSuccess |= SPI_ConfigureAsInterrupt(SPI2);
+   bSuccess |= InitializeAardvark();
 
    return bSuccess;
 }
@@ -72,17 +102,11 @@ void Run_UserApp1()
    {
       uiCounter = 0;
 
-      if(!(SPI_GetStates(SPI2) & SPISTATE_RX_BUSY))
-      {
-         (void)SPI_Transfer(SPI2, &aucTheSPIReadTransferBuffer[0], 4, NULL, 0);
-         LED_Toggle(LED_GREEN);
-      }
+      LED_Toggle(LED_GREEN);
 
-      if(!(SPI_GetStates(SPI1) & SPISTATE_TX_BUSY))
-      {
-         (void)SPI_Transfer(SPI1, NULL, 0, &aucTheSPIWriteTransferBuffer[0], 1);
-         LED_Toggle(LED_ORANGE);
-      }
+      static UCHAR ucTheAardvarkLEDValue = 0xAA;
+      WriteOutputAardvark(~ucTheAardvarkLEDValue);
+      ReadOutputAardvark(&ucTheAardvarkLEDValue);
    }
 }
 

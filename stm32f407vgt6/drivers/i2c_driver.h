@@ -7,7 +7,17 @@
 #include "peripherals.h"
 
 // Defines ----------------------------------------------------------------------------------------
+#define I2C1_DEVICE_ADDRESS   (0x61)
+#define I2C2_DEVICE_ADDRESS   (0x62)
+#define I2C3_DEVICE_ADDRESS   (0x63)
+
 // Typedefs ---------------------------------------------------------------------------------------
+
+typedef enum
+{
+   I2CMODE_MASTER = 0,
+   I2CMODE_SLAVE
+} I2CModeEnum;
 
 typedef enum
 {
@@ -17,7 +27,8 @@ typedef enum
 
 typedef enum
 {
-   I2CDUTY_2 = 0,
+   I2CDUTY_NONE = 0,
+   I2CDUTY_2 = I2CDUTY_NONE,
    I2CDUTY_16_9,
 } I2CDutyCycleEnum;
 
@@ -73,5 +84,27 @@ BOOL I2C_Enable(
 // -------------------------------------------------------------
 BOOL I2C_Disable(
    I2CControllerEnum eController_);
+
+// -------------------------------------------------------------
+// Write data to the I2C lines
+// -------------------------------------------------------------
+BOOL I2C_WriteData(
+   I2CControllerEnum eController_,
+   I2CModeEnum eMode_,
+   UCHAR ucAddress_,
+   UCHAR* pucData_,
+   UINT uiLength_);
+
+// -------------------------------------------------------------
+// Read data from the I2C lines
+// -------------------------------------------------------------
+BOOL I2C_ReadData(
+   I2CControllerEnum eController_,
+   I2CModeEnum eMode_,
+   UCHAR ucAddress_,
+   UCHAR* pucCommand_,
+   UINT uiCommandLength_,
+   UCHAR* pucData_,
+   UINT uiLength_);
 
 #endif // I2C_DRIVER_H_

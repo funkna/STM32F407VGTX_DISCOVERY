@@ -48,7 +48,7 @@ ClockSourceEnum RCC_GetSystemClockSource();
 //--------------------------------------------------------------
 // Get the frequency of a specific clock type
 //--------------------------------------------------------------
-ULONG RCC_GetClockFrequency(
+UINT RCC_GetClockFrequency(
    ClockTypeEnum eClockType_);
 
 #endif // RCC_DRIVER_H_
