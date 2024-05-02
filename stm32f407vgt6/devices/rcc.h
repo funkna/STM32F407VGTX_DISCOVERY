@@ -20,8 +20,11 @@
 #define CFGR_RTCPRE           (0x1FUL << 16)
 #define CFGR_PPRE2            (0x07UL << 13)
 #define CFGR_PPRE1            (0x07UL << 10)
+#define CFGR_PPRE1_OFFSET     (10)
 #define CFGR_HPRE             (0x0FUL << 4)
+#define CFGR_HPRE_OFFSET      (4)
 #define CFGR_SWS              (0x03UL << 2)
+#define CFGR_SWS_OFFSET       (2)
 #define CFGR_SW               (0x03UL << 0)
 
 #define APB1_DAC              (0x01UL << 29)

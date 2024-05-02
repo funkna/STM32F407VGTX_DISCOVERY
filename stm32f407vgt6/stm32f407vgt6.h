@@ -5,7 +5,7 @@
 // Internal oscillator frequency
 //--------------------------------------------------------------
 #define HSI_RC_CLK_FREQ_MHZ      (16)
-#define HSI_RC_CLK_FREQ_HZ       (16000000)
+#define HSE_RC_CLK_FREQ_MHZ      (8)
 
 //--------------------------------------------------------------
 // Base addresses and sizes for memory blocks.

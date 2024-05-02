@@ -1,10 +1,14 @@
 // Includes ---------------------------------------------------------------------------------------
+#include "constants.h"
 #include "devices/i2c.h"
 #include "drivers/gpio_driver.h"
 #include "drivers/rcc_driver.h"
 #include "drivers/i2c_driver.h"
 
 // Defines ----------------------------------------------------------------------------------------
+#define I2C_FREQ_100KHZ (100000)
+#define I2C_FREQ_200KHZ (200000)
+
 // Typedefs ---------------------------------------------------------------------------------------
 typedef struct
 {
@@ -141,7 +145,6 @@ BOOL I2C_SetConfig(
       uiCR1Value &= ~CR1_ACK;
    }
 
-
    uiCR2Value |= (CR2_FREQ & HSI_RC_CLK_FREQ_MHZ);
 
    switch(pstConfiguration_->eClockSpeed)
@@ -154,7 +157,7 @@ BOOL I2C_SetConfig(
          // T_PCLK1 = (1/16MHz) = 0.0625us
          // 5us/0.0625us = 80
          // CCR = 80
-         uiCCRValue |= (CCR_CCR & 80);
+         uiCCRValue |= (CCR_CCR & ((RCC_GetClockFrequency(CLKTYPE_PCLK1)/I2C_FREQ_100KHZ)/MHZ_TO_HZ));
          uiCCRValue &= ~CCR_FS;
          break;
       }
@@ -170,7 +173,7 @@ BOOL I2C_SetConfig(
             // T_PCLK1 = (1/16MHz) = 0.0625us
             // 5us/0.0625us = 3 * CCR = 80 = 3 * 26
             // CCR = 26
-            uiCCRValue |= (CCR_CCR & 26);
+            uiCCRValue |= (CCR_CCR & (((RCC_GetClockFrequency(CLKTYPE_PCLK1)/I2C_FREQ_200KHZ)/3)/MHZ_TO_HZ));
             uiCCRValue |= CCR_FS;
             uiCCRValue &= ~CCR_DUTY;
          }
@@ -184,7 +187,7 @@ BOOL I2C_SetConfig(
             // T_PCLK1 = (1/16MHz) = 0.0625us
             // 5us/0.0625us = 25 * CCR = calc = 25 * 3
             // CCR = 3
-            uiCCRValue |= (CCR_CCR & 3);
+            uiCCRValue |= (CCR_CCR & (((RCC_GetClockFrequency(CLKTYPE_PCLK1)/I2C_FREQ_200KHZ)/25)/MHZ_TO_HZ));
             uiCCRValue |= CCR_FS;
             uiCCRValue &= ~CCR_DUTY;
 

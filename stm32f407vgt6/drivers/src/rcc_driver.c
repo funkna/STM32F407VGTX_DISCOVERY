@@ -1,11 +1,17 @@
 // Includes ---------------------------------------------------------------------------------------
+#include "constants.h"
 #include "devices/rcc.h"
 #include "drivers/rcc_driver.h"
 
 // Defines ----------------------------------------------------------------------------------------
+#define NUM_AHB_PRESCALERS (8)
+#define NUM_APB_PRESCALERS (4)
+
 // Typedefs ---------------------------------------------------------------------------------------
 // Statics, Externs & Globals ---------------------------------------------------------------------
 static RCCRegistersStruct* pstTheRCCRegisters = NULL;
+static const UCHAR aucAHB_PRESCALERS[NUM_AHB_PRESCALERS] = {2, 4, 8, 16, 64, 128, 256, 512};
+static const UCHAR aucAPB_PRESCALERS[NUM_APB_PRESCALERS] = {2, 4, 8, 16};
 
 // Functions --------------------------------------------------------------------------------------
 
@@ -558,4 +564,75 @@ BOOL RCC_ResetPeripheralClock(
    }
 
    return bReset;
+}
+
+//--------------------------------------------------------------
+ClockSourceEnum RCC_GetSystemClockSource()
+{
+   if(pstTheRCCRegisters == NULL)
+   {
+      return CLKSRC_UNKNOWN;
+   }
+
+   return (ClockSourceEnum)((pstTheRCCRegisters->PLLCFGR & CFGR_SWS) >> CFGR_SWS_OFFSET);
+}
+
+//--------------------------------------------------------------
+ULONG RCC_GetClockFrequency(
+   ClockTypeEnum eClockType_)
+{
+   ULONG ulClockSourceFrequencyHz = 0;
+   switch(RCC_GetSystemClockSource())
+   {
+      case CLKSRC_HSI:
+      {
+         ulClockSourceFrequencyHz = HSI_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
+         break;
+      }
+      case CLKSRC_HSE:
+      {
+         ulClockSourceFrequencyHz = HSE_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
+         break;
+      }
+      case CLKSRC_PLL: // TODO: Implement this.
+      default:
+      {
+         break;
+      }
+   }
+
+   if(ulClockSourceFrequencyHz == 0)
+   {
+      return 0; // Cannot do anything without this being determined.
+   }
+
+   UCHAR ucAHBPrescaler = 1;
+   UCHAR ucAPBPrescaler = 1;
+   UCHAR ucTemp = 0;
+   ULONG ulClockFrequency = 0;
+   switch(eClockType_)
+   {
+      case CLKTYPE_PCLK1:
+      {
+         ucTemp = ((pstTheRCCRegisters->PLLCFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
+         if(ucTemp >= NUM_AHB_PRESCALERS)
+         {
+            ucAHBPrescaler = aucAHB_PRESCALERS[ucTemp - NUM_AHB_PRESCALERS];
+         }
+
+         ucTemp = ((pstTheRCCRegisters->PLLCFGR & CFGR_PPRE1) >> CFGR_PPRE1_OFFSET);
+         if(ucTemp >= NUM_APB_PRESCALERS)
+         {
+            ucAPBPrescaler = aucAPB_PRESCALERS[ucTemp - NUM_APB_PRESCALERS];
+         }
+
+         ulClockFrequency = (ulClockSourceFrequencyHz / ucAHBPrescaler) / ucAPBPrescaler;
+         break;
+      }
+      default:
+      {
+         break;
+      }
+   }
+   return ulClockFrequency;
 }
