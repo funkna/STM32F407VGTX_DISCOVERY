@@ -1,6 +1,7 @@
 // Includes ---------------------------------------------------------------------------------------
 #include "led.h"
 #include "button.h"
+#include "ext/aardvark.h"
 
 #include "drivers/nvic_driver.h"
 #include "drivers/exti_driver.h"
@@ -11,61 +12,11 @@
 #include "user_app_1.h"
 
 // Defines ----------------------------------------------------------------------------------------
-#define AARDVARK_I2C_PORT_EXPANDER_ADDRESS   (0x38) // This can be configured by the hardware jumper.
-#define AARDVARK_I2C_CMD_INPUT_REGISTER      (0x00)
-#define AARDVARK_I2C_CMD_OUTPUT_REGISTER     (0x01)
-#define AARDVARK_I2C_CMD_POLARITY_REGISTER   (0x02)
-#define AARDVARK_I2C_CMD_CONFIG_REGISTER     (0x03)
-#define AARDVARK_I2C_PORT_ALL_PINS           (0xFF)
-
 // Statics, Externs & Globals ---------------------------------------------------------------------
 static UINT uiCounter = 0;
 static const UINT uiMAX_COUNT = 0x10000;
 
 // Functions --------------------------------------------------------------------------------------
-
-// -------------------------------------------------------------
-static BOOL InitializeAardvark(void)
-{
-   const UINT uiCONFIG_COMMAND_LENGTH = 2;
-   UCHAR aucConfigureIODirectionCommand[] = {
-      AARDVARK_I2C_CMD_CONFIG_REGISTER,
-      ~AARDVARK_I2C_PORT_ALL_PINS
-   };
-
-   return I2C_WriteData(I2C1, I2CMODE_MASTER, AARDVARK_I2C_PORT_EXPANDER_ADDRESS, &aucConfigureIODirectionCommand[0], uiCONFIG_COMMAND_LENGTH);
-}
-
-// -------------------------------------------------------------
-static BOOL WriteOutputAardvark(
-   UCHAR ucValue_)
-{
-   const UINT uiWRITE_OUTPUT_COMMAND_LENGTH = 2;
-   UCHAR aucWriteIODirectionCommand[] = {
-      AARDVARK_I2C_CMD_OUTPUT_REGISTER,
-      ucValue_
-   };
-
-   return I2C_WriteData(I2C1, I2CMODE_MASTER, AARDVARK_I2C_PORT_EXPANDER_ADDRESS, &aucWriteIODirectionCommand[0], uiWRITE_OUTPUT_COMMAND_LENGTH);
-}
-
-// -------------------------------------------------------------
-static BOOL ReadOutputAardvark(
-   UCHAR* pucValue_)
-{
-   if(pucValue_ == NULL)
-   {
-      return FALSE;
-   }
-
-   const UINT uiREAD_OUTPUT_COMMAND_LENGTH = 1;
-   UCHAR aucReadIODirectionCommand[] = {
-      AARDVARK_I2C_CMD_OUTPUT_REGISTER
-   };
-
-   // Utilizing repeated START here, but alternatively an entirely different I2C Write transaction could be performed here.
-   return I2C_ReadData(I2C1, I2CMODE_MASTER, AARDVARK_I2C_PORT_EXPANDER_ADDRESS, &aucReadIODirectionCommand[0], uiREAD_OUTPUT_COMMAND_LENGTH, pucValue_, 1);
-}
 
 // -------------------------------------------------------------
 static void ButtonPressCallback(void)
@@ -88,6 +39,7 @@ BOOL Initialize_UserApp1()
 
    bSuccess |= I2C_SetConfig(I2C1, &stI2CMasterConfig);
    bSuccess |= I2C_Enable(I2C1);
+   bSuccess |= I2C_ConfigureAsInterrupt(I2C1);
 
    bSuccess |= InitializeAardvark();
 
@@ -104,9 +56,22 @@ void Run_UserApp1()
 
       LED_Toggle(LED_GREEN);
 
+      static BOOL bWriteCompleted = FALSE;
       static UCHAR ucTheAardvarkLEDValue = 0xAA;
-      WriteOutputAardvark(~ucTheAardvarkLEDValue);
-      ReadOutputAardvark(&ucTheAardvarkLEDValue);
+
+      if((I2C_GetState(I2C1) == I2CSTATE_IDLE) &&
+         (!bWriteCompleted))
+      {
+         (void)WriteOutputAardvark(~ucTheAardvarkLEDValue);
+         bWriteCompleted = TRUE;
+      }
+
+      if((I2C_GetState(I2C1) == I2CSTATE_IDLE) &&
+         (bWriteCompleted))
+      {
+         (void)ReadOutputAardvark(&ucTheAardvarkLEDValue);
+         bWriteCompleted = FALSE;
+      }
    }
 }
 

@@ -4,19 +4,29 @@
 #include "drivers/gpio_driver.h"
 #include "drivers/rcc_driver.h"
 #include "drivers/i2c_driver.h"
+#include "drivers/nvic_driver.h"
 
 // Defines ----------------------------------------------------------------------------------------
 #define I2C_FREQ_100KHZ (100000)
 #define I2C_FREQ_200KHZ (200000)
-#define I2C_RWBIT_WRITE (0)
-#define I2C_RWBIT_READ  (1)
 
 
 // Typedefs ---------------------------------------------------------------------------------------
 typedef struct
 {
+   UCHAR ucAddress;
+   I2CTransferTypeEnum eTransferType;
+   UCHAR* pucDataBuffer;
+   UINT uiDataBufferSize; // The size of the data to write or read.
+   UINT uiDataBytes; // The current number of bytes received/transmitted.
+} I2CBuffersStruct;
+
+typedef struct
+{
    I2CRegistersStruct* pstRegisters;
    I2CConfigurationStruct stConfiguration;
+   I2CBuffersStruct stBuffers;
+   I2CTransferStateEnum eTransferState;
 } I2CDeviceStruct;
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -52,6 +62,117 @@ static STM32F407VGT6_PeriperalEnum I2CEnumToSTM32Enum(
          return PERIPHERAL_INVALID;
       }
    }
+}
+
+// -------------------------------------------------------------
+static void I2C_IRQHandler(
+   I2CControllerEnum eController_)
+{
+   switch(astTheI2CDevices[eController_].eTransferState)
+   {
+      case I2CSTATE_BEGIN:
+      {
+         if(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_SB)
+         {
+            if(astTheI2CDevices[eController_].stBuffers.eTransferType == I2CTRANSFER_READ)
+            {
+               astTheI2CDevices[eController_].pstRegisters->CR1 |= CR1_ACK;
+            }
+
+            UCHAR ucSendAddr = (astTheI2CDevices[eController_].stBuffers.ucAddress << 1) | astTheI2CDevices[eController_].stBuffers.eTransferType;
+            astTheI2CDevices[eController_].pstRegisters->DR = ucSendAddr;
+
+            astTheI2CDevices[eController_].eTransferState = I2CSTATE_START_SENT;
+         }
+         break;
+      }
+      case I2CSTATE_START_SENT:
+      {
+         if(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR)
+         {
+            UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
+            uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+
+            astTheI2CDevices[eController_].eTransferState = I2CSTATE_IN_PROGRESS;
+         }
+      } // Intentional fall-through
+      case I2CSTATE_IN_PROGRESS:
+      {
+         // Transfer data as long as the current number of transferred bytes is not what we have expected.
+         if(astTheI2CDevices[eController_].stBuffers.uiDataBytes < astTheI2CDevices[eController_].stBuffers.uiDataBufferSize)
+         {
+            if((astTheI2CDevices[eController_].stBuffers.eTransferType == I2CTRANSFER_WRITE) &&
+               (astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_TXE))
+            {
+               // Write another byte
+               astTheI2CDevices[eController_].pstRegisters->DR = *(astTheI2CDevices[eController_].stBuffers.pucDataBuffer);
+
+               astTheI2CDevices[eController_].stBuffers.pucDataBuffer++;
+               astTheI2CDevices[eController_].stBuffers.uiDataBytes++;
+
+               // Transfer is complete - send the STOP and shut down the interrupts
+               if(astTheI2CDevices[eController_].stBuffers.uiDataBytes == astTheI2CDevices[eController_].stBuffers.uiDataBufferSize)
+               {
+                  astTheI2CDevices[eController_].eTransferState = I2CSTATE_DATA_SENT;
+               }
+            }
+            else if((astTheI2CDevices[eController_].stBuffers.eTransferType == I2CTRANSFER_READ) &&
+                    (astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_RXNE))
+            {
+               // Transfer is about to be completed - send the STOP and shut down the interrupts
+               if(1 == (astTheI2CDevices[eController_].stBuffers.uiDataBytes - astTheI2CDevices[eController_].stBuffers.uiDataBufferSize))
+               {
+                  astTheI2CDevices[eController_].pstRegisters->CR1 &= ~CR1_ACK;
+                  astTheI2CDevices[eController_].pstRegisters->CR1 |= CR1_STOP;
+
+                  astTheI2CDevices[eController_].eTransferState = I2CSTATE_IDLE;
+                  astTheI2CDevices[eController_].pstRegisters->CR2 &= ~CR2_ITBUFEN;
+                  astTheI2CDevices[eController_].pstRegisters->CR2 &= ~CR2_ITEVTEN;
+               }
+
+               // Read another byte
+               *astTheI2CDevices[eController_].stBuffers.pucDataBuffer = astTheI2CDevices[eController_].pstRegisters->DR;
+
+               astTheI2CDevices[eController_].stBuffers.pucDataBuffer++;
+               astTheI2CDevices[eController_].stBuffers.uiDataBytes++;
+            }
+         }
+
+         break;
+      }
+      case I2CSTATE_DATA_SENT:
+      {
+         astTheI2CDevices[eController_].eTransferState = I2CSTATE_IDLE;
+
+         astTheI2CDevices[eController_].pstRegisters->CR1 |= CR1_STOP;
+         astTheI2CDevices[eController_].pstRegisters->CR2 &= ~CR2_ITBUFEN;
+         astTheI2CDevices[eController_].pstRegisters->CR2 &= ~CR2_ITEVTEN;
+         break;
+      }
+      default:
+      {
+         astTheI2CDevices[eController_].eTransferState = I2CSTATE_ERROR;
+         break;
+      }
+   }
+}
+
+// -------------------------------------------------------------
+// I2C EV IRQ Vector Callbacks
+// -------------------------------------------------------------
+void I2C1_EV_IRQHandler(void)
+{
+   I2C_IRQHandler(I2C1);
+}
+
+void I2C2_EV_IRQHandler(void)
+{
+   I2C_IRQHandler(I2C2);
+}
+
+void I2C3_EV_IRQHandler(void)
+{
+   I2C_IRQHandler(I2C3);
 }
 
 // -------------------------------------------------------------
@@ -262,7 +383,7 @@ BOOL I2C_WriteData(
       while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_SB));
 
       // Send the slave address
-      UCHAR ucSendAddr = (ucAddress_ << 1) | I2C_RWBIT_WRITE;
+      UCHAR ucSendAddr = (ucAddress_ << 1) | I2CTRANSFER_WRITE;
       astTheI2CDevices[eController_].pstRegisters->DR = ucSendAddr;
 
       // Ensure the address has been sent and clear the bit
@@ -324,7 +445,7 @@ BOOL I2C_ReadData(
          while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_SB));
 
          // Send the slave address
-         UCHAR ucSendAddr = (ucAddress_ << 1) | I2C_RWBIT_WRITE;
+         UCHAR ucSendAddr = (ucAddress_ << 1) | I2CTRANSFER_WRITE;
          astTheI2CDevices[eController_].pstRegisters->DR = ucSendAddr;
 
          // Ensure the address has been sent and clear the bit
@@ -355,7 +476,7 @@ BOOL I2C_ReadData(
       while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_SB));
 
       // Send the slave address
-      UCHAR ucSendAddr = (ucAddress_ << 1) | I2C_RWBIT_READ;
+      UCHAR ucSendAddr = (ucAddress_ << 1) | I2CTRANSFER_READ;
       astTheI2CDevices[eController_].pstRegisters->DR = ucSendAddr;
 
       // Ensure the address has been sent and clear the bit
@@ -392,3 +513,79 @@ BOOL I2C_ReadData(
    return FALSE;
 }
 
+// -------------------------------------------------------------
+BOOL I2C_MasterTransfer(
+   I2CControllerEnum eController_,
+   I2CTransferTypeEnum eTransferType_,
+   UCHAR ucAddress_,
+   UCHAR* pucBuffer_,
+   UINT uiSize_)
+{
+   // Verify arguments & callback
+   if(astTheI2CDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   if(astTheI2CDevices[eController_].eTransferState == I2CSTATE_IDLE)
+   {
+      // Set the buffers
+      astTheI2CDevices[eController_].stBuffers.pucDataBuffer = pucBuffer_;
+      astTheI2CDevices[eController_].stBuffers.uiDataBufferSize = uiSize_;
+      astTheI2CDevices[eController_].stBuffers.uiDataBytes = 0;
+
+      astTheI2CDevices[eController_].stBuffers.eTransferType = eTransferType_;
+      astTheI2CDevices[eController_].stBuffers.ucAddress = ucAddress_;
+
+      // Enable the buffer interrupt and event interrupt
+      astTheI2CDevices[eController_].pstRegisters->CR2 |= CR2_ITBUFEN;
+      astTheI2CDevices[eController_].pstRegisters->CR2 |= CR2_ITEVTEN;
+
+      // Send the start condition
+      astTheI2CDevices[eController_].eTransferState = I2CSTATE_BEGIN;
+      astTheI2CDevices[eController_].pstRegisters->CR1 |= CR1_START;
+
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
+// -------------------------------------------------------------
+I2CTransferStateEnum I2C_GetState(
+   I2CControllerEnum eController_)
+{
+   return astTheI2CDevices[eController_].eTransferState;
+}
+
+// -------------------------------------------------------------
+BOOL I2C_ConfigureAsInterrupt(
+   I2CControllerEnum eController_)
+{
+   if(astTheI2CDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   IRQVectorEnum eIRQVector = IRQ_VECTOR_MAX;
+   switch(eController_)
+   {
+      case I2C1:
+      {
+         eIRQVector = IRQ_VECTOR_I2C1_EV;
+         break;
+      }
+      case I2C2:
+      {
+         eIRQVector = IRQ_VECTOR_I2C2_EV;
+         break;
+      }
+      case I2C3:
+      default:
+         return FALSE;
+   }
+
+   astTheI2CDevices[eController_].eTransferState = I2CSTATE_IDLE;
+
+   return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
+}

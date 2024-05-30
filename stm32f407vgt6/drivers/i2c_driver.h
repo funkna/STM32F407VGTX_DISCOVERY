@@ -46,6 +46,22 @@ typedef struct
    I2CClockSpeedEnum eClockSpeed;
 } I2CConfigurationStruct;
 
+typedef enum
+{
+   I2CTRANSFER_WRITE = 0,
+   I2CTRANSFER_READ
+} I2CTransferTypeEnum;
+
+typedef enum
+{
+   I2CSTATE_IDLE = 0,
+   I2CSTATE_BEGIN,
+   I2CSTATE_START_SENT,
+   I2CSTATE_IN_PROGRESS,
+   I2CSTATE_DATA_SENT,
+   I2CSTATE_ERROR
+} I2CTransferStateEnum;
+
 // Functions --------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------
@@ -106,5 +122,27 @@ BOOL I2C_ReadData(
    UINT uiCommandLength_,
    UCHAR* pucData_,
    UINT uiLength_);
+
+// -------------------------------------------------------------
+// Start a transfer on the I2C bus.
+// -------------------------------------------------------------
+BOOL I2C_MasterTransfer(
+   I2CControllerEnum eController_,
+   I2CTransferTypeEnum eTransferType_,
+   UCHAR ucAddress_,
+   UCHAR* pucBuffer_,
+   UINT uiSize_);
+
+// -------------------------------------------------------------
+// Get the transfer state of an I2C controller.
+// -------------------------------------------------------------
+I2CTransferStateEnum I2C_GetState(
+   I2CControllerEnum eController_);
+
+// -------------------------------------------------------------
+// Enable an interrupt vector for an I2C controller.
+// -------------------------------------------------------------
+BOOL I2C_ConfigureAsInterrupt(
+   I2CControllerEnum eController_);
 
 #endif // I2C_DRIVER_H_
