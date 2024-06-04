@@ -1,0 +1,408 @@
+// Includes ---------------------------------------------------------------------------------------
+#include <string.h>
+#include "constants.h"
+#include "devices/usart.h"
+#include "drivers/gpio_driver.h"
+#include "drivers/rcc_driver.h"
+#include "drivers/usart_driver.h"
+
+// Defines ----------------------------------------------------------------------------------------
+// Typedefs ---------------------------------------------------------------------------------------
+typedef struct
+{
+   USARTRegistersStruct* pstRegisters;
+   USARTConfigurationStruct stConfiguration;
+} USARTDeviceStruct;
+
+// Statics, Externs & Globals ---------------------------------------------------------------------
+static const GPIOConfigurationStruct stTheUSARTPinConfig = {
+   GPIOMODE_ALT_FUNC,
+   GPIOTYPE_PUSHPULL,
+   GPIOSPEED_HI,
+   GPIOPUPD_NONE,
+   GPIOALTFUNC_AF7
+};
+static USARTDeviceStruct astTheUSARTDevices[USART_MAX] = {0};
+
+// Functions --------------------------------------------------------------------------------------
+static STM32F407VGT6_PeriperalEnum USARTEnumToSTM32Enum(
+   USARTControllerEnum eController_)
+{
+   switch(eController_)
+   {
+      case USART1:
+      {
+         return PERIPHERAL_USART1;
+      }
+      case USART2:
+      {
+         return PERIPHERAL_USART2;
+      }
+      case USART3:
+      {
+         return PERIPHERAL_USART3;
+      }
+      case USART4:
+      {
+         return PERIPHERAL_UART4;
+      }
+      case USART5:
+      {
+         return PERIPHERAL_UART5;
+      }
+      case USART6:
+      {
+         return PERIPHERAL_USART6;
+      }
+      default:
+      {
+         return PERIPHERAL_INVALID;
+      }
+   }
+}
+
+// -------------------------------------------------------------
+BOOL USART_Initialize(
+   USARTControllerEnum eController_)
+{
+   BOOL bSuccess = FALSE;
+   astTheUSARTDevices[eController_].pstRegisters = GetUSARTController(eController_);
+   if(astTheUSARTDevices[eController_].pstRegisters != NULL)
+   {
+      bSuccess = RCC_EnablePeripheralClock(USARTEnumToSTM32Enum(eController_));
+   }
+
+   if(bSuccess)
+   {
+      switch(eController_)
+      {
+         case USART1:
+         {
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_8, &stTheUSARTPinConfig); // CK
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_9, &stTheUSARTPinConfig); // TX
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_10, &stTheUSARTPinConfig); // RX
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_11, &stTheUSARTPinConfig); // CTS
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_12, &stTheUSARTPinConfig); // RTS
+            break;
+         }
+         case USART2:
+         {
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_0, &stTheUSARTPinConfig); // CTS
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_1, &stTheUSARTPinConfig); // RTS
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_2, &stTheUSARTPinConfig); // TX
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_3, &stTheUSARTPinConfig); // RX
+            GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_4, &stTheUSARTPinConfig); // CK
+            break;
+         }
+         case USART3: // TODO: Fall-through for now
+         case USART4: // TODO: Fall-through for now
+         case USART5: // TODO: Fall-through for now
+         case USART6: // TODO: Fall-through for now
+         default:
+         {
+            return FALSE;
+         }
+      }
+   }
+
+   return bSuccess;
+}
+
+// -------------------------------------------------------------
+BOOL USART_Reset(
+   USARTControllerEnum eController_)
+{
+   return RCC_ResetPeripheralClock(USARTEnumToSTM32Enum(eController_));
+}
+
+// -------------------------------------------------------------
+BOOL USART_Enable(
+   USARTControllerEnum eController_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_UE;
+   return TRUE;
+}
+
+// -------------------------------------------------------------
+BOOL USART_Disable(
+   USARTControllerEnum eController_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   astTheUSARTDevices[eController_].pstRegisters->CR1 &= ~CR1_UE;
+   return TRUE;
+}
+
+// -------------------------------------------------------------
+BOOL USART_SetConfig(
+   USARTControllerEnum eController_,
+   const USARTConfigurationStruct* pstConfiguration_)
+{
+   if((astTheUSARTDevices[eController_].pstRegisters == NULL) ||
+      (pstConfiguration_ == NULL) ||
+      // TODO: Check PCLK2 for USART1 & 6.
+      ((HSI_RC_CLK_FREQ_MHZ * MHZ_TO_HZ) != RCC_GetClockFrequency(CLKTYPE_PCLK1)))
+   {
+      return FALSE;
+   }
+
+   UINT uiMantissaBRR = 0;
+   UCHAR ucFractionBRR = 0;
+   UINT uiBRRValue = 0;
+   UINT uiCR1Value = astTheUSARTDevices[eController_].pstRegisters->CR1;
+   UINT uiCR2Value = astTheUSARTDevices[eController_].pstRegisters->CR2;
+   UINT uiCR3Value = astTheUSARTDevices[eController_].pstRegisters->CR3;
+
+   // USART mode
+   switch(pstConfiguration_->eMode)
+   {
+      case USARTMODE_TXRX:
+      {
+         uiCR1Value |= CR1_TE;
+         uiCR1Value |= CR1_RE;
+         break;
+      }
+      case USARTMODE_TX:
+      {
+         uiCR1Value |= CR1_TE;
+         uiCR1Value &= ~CR1_RE;
+         break;
+      }
+      case USARTMODE_RX:
+      {
+         uiCR1Value &= ~CR1_TE;
+         uiCR1Value |= CR1_RE;
+         break;
+      }
+      default:
+      {
+         return FALSE;
+      }
+   }
+
+   // Baud Rate
+   switch(pstConfiguration_->eBaudRate)
+   {
+      case USARTBAUD_1200:
+      {
+         uiMantissaBRR = 833;
+         ucFractionBRR = 5;
+         break;
+      }
+      case USARTBAUD_2400:
+      {
+         uiMantissaBRR = 416;
+         ucFractionBRR = 11;
+         break;
+      }
+      case USARTBAUD_9600:
+      {
+         uiMantissaBRR = 104;
+         ucFractionBRR = 3;
+         break;
+      }
+      case USARTBAUD_19200:
+      {
+         uiMantissaBRR = 52;
+         ucFractionBRR = 1;
+         break;
+      }
+      case USARTBAUD_38400:
+      {
+         uiMantissaBRR = 26;
+         ucFractionBRR = 1;
+         break;
+      }
+      case USARTBAUD_57600:
+      {
+         uiMantissaBRR = 13;
+         ucFractionBRR = 0;
+         break;
+      }
+      case USARTBAUD_115200:
+      {
+         uiMantissaBRR = 8;
+         ucFractionBRR = 11;
+         break;
+      }
+      case USARTBAUD_230400:
+      {
+         uiMantissaBRR = 4;
+         ucFractionBRR = 5;
+         break;
+      }
+      case USARTBAUD_460800:
+      {
+         uiMantissaBRR = 2;
+         ucFractionBRR = 3;
+         break;
+      }
+      default:
+      {
+         return FALSE;
+      }
+   }
+
+   uiBRRValue = ((uiMantissaBRR << BRR_DIVMANT_OFFSET) & BRR_DIVMANT) |
+                ((ucFractionBRR << BRR_DIVFRAC_OFFSET) & BRR_DIVFRAC);
+
+   // Word length
+   if(pstConfiguration_->eWordLength == USARTWORD_8BIT)
+   {
+      uiCR1Value &= ~CR1_M;
+   }
+
+   // Parity bits
+   if(pstConfiguration_->ePartiy == USARTPARITY_NONE)
+   {
+      uiCR1Value &= ~CR1_PCE;
+   }
+   else
+   {
+      uiCR1Value |= CR1_PCE;
+
+      if(pstConfiguration_->ePartiy == USARTPARITY_ODD)
+      {
+         uiCR1Value |= CR1_PS;
+      }
+      else
+      {
+         uiCR1Value &= ~CR1_PS;
+      }
+   }
+
+   // Stop bits
+   switch(pstConfiguration_->eStopBits)
+   {
+      case USARTSTOP_1BIT:
+      {
+         uiCR2Value |= (CR2_STOP_BITS_1 << CR2_STOP_OFFSET);
+         break;
+      }
+      case USARTSTOP_0_5BIT:
+      {
+         uiCR2Value |= (CR2_STOP_BITS_0_5 << CR2_STOP_OFFSET);
+         break;
+      }
+      case USARTSTOP_2BIT:
+      {
+         uiCR2Value |= (CR2_STOP_BITS_2 << CR2_STOP_OFFSET);
+         break;
+      }
+      case USARTSTOP_1_5BIT:
+      {
+         uiCR2Value |= (CR2_STOP_BITS_1_5 << CR2_STOP_OFFSET);
+         break;
+      }
+      default:
+      {
+         return FALSE;
+      }
+   }
+
+   // Flow control
+   switch(pstConfiguration_->eFlowControl)
+   {
+      case USARTFLOWCTL_CTS:
+      {
+         uiCR3Value |= CR3_CTSE;
+         uiCR3Value &= ~CR3_RTSE;
+         break;
+      }
+      case USARTFLOWCTL_RTS:
+      {
+         uiCR3Value &= ~CR3_CTSE;
+         uiCR3Value |= CR3_RTSE;
+         break;
+      }
+      case USARTFLOWCTL_CTS_RTS:
+      {
+         uiCR3Value |= CR3_CTSE;
+         uiCR3Value |= CR3_RTSE;
+         break;
+      }
+      default:
+      {
+         uiCR3Value &= ~CR3_CTSE;
+         uiCR3Value &= ~CR3_RTSE;
+         break;
+      }
+   }
+
+   // Write the register values.
+   astTheUSARTDevices[eController_].pstRegisters->BRR = uiBRRValue;
+   astTheUSARTDevices[eController_].pstRegisters->CR1 = uiCR1Value;
+   astTheUSARTDevices[eController_].pstRegisters->CR2 = uiCR2Value;
+   astTheUSARTDevices[eController_].pstRegisters->CR3 = uiCR3Value;
+
+   memcpy(&(astTheUSARTDevices[eController_].stConfiguration), pstConfiguration_, sizeof(USARTConfigurationStruct));
+
+   return TRUE;
+}
+
+// -------------------------------------------------------------
+USARTConfigurationStruct* USART_GetConfig(
+   USARTControllerEnum eController_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return NULL;
+   }
+
+   return &(astTheUSARTDevices[eController_].stConfiguration);
+}
+
+// -------------------------------------------------------------
+BOOL USART_ReadData(
+   USARTControllerEnum eController_,
+   UCHAR* pucData_,
+   UINT uiDataLength_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   for(UINT uiIndex = 0; uiIndex < uiDataLength_; uiIndex++)
+   {
+      while(!(astTheUSARTDevices[eController_].pstRegisters->SR & SR_RXNE));
+
+      *pucData_ = astTheUSARTDevices[eController_].pstRegisters->DR;
+
+      pucData_++;
+   }
+
+	return FALSE;
+}
+
+// -------------------------------------------------------------
+BOOL USART_WriteData(
+   USARTControllerEnum eController_,
+   const UCHAR* pucData_,
+   UINT uiDataLength_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   for(UINT uiIndex = 0; uiIndex < uiDataLength_; uiIndex++)
+   {
+      while(!(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TXE));
+
+      astTheUSARTDevices[eController_].pstRegisters->DR = *pucData_;
+      pucData_++;
+   }
+
+   while(!(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TC));
+
+   return TRUE;
+}

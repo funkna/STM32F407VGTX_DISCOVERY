@@ -574,7 +574,7 @@ ClockSourceEnum RCC_GetSystemClockSource()
       return CLKSRC_UNKNOWN;
    }
 
-   return (ClockSourceEnum)((pstTheRCCRegisters->PLLCFGR & CFGR_SWS) >> CFGR_SWS_OFFSET);
+   return (ClockSourceEnum)((pstTheRCCRegisters->CFGR & CFGR_SWS) >> CFGR_SWS_OFFSET);
 }
 
 //--------------------------------------------------------------
@@ -614,13 +614,30 @@ UINT RCC_GetClockFrequency(
    {
       case CLKTYPE_PCLK1:
       {
-         ucTemp = ((pstTheRCCRegisters->PLLCFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
+         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
          if(ucTemp >= NUM_AHB_PRESCALERS)
          {
             ucAHBPrescaler = aucAHB_PRESCALERS[ucTemp - NUM_AHB_PRESCALERS];
          }
 
-         ucTemp = ((pstTheRCCRegisters->PLLCFGR & CFGR_PPRE1) >> CFGR_PPRE1_OFFSET);
+         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_PPRE1) >> CFGR_PPRE1_OFFSET);
+         if(ucTemp >= NUM_APB_PRESCALERS)
+         {
+            ucAPBPrescaler = aucAPB_PRESCALERS[ucTemp - NUM_APB_PRESCALERS];
+         }
+
+         uiClockFrequency = (uiClockSourceFrequencyHz / ucAHBPrescaler) / ucAPBPrescaler;
+         break;
+      }
+      case CLKTYPE_PCLK2:
+      {
+         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
+         if(ucTemp >= NUM_AHB_PRESCALERS)
+         {
+            ucAHBPrescaler = aucAHB_PRESCALERS[ucTemp - NUM_AHB_PRESCALERS];
+         }
+
+         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_PPRE2) >> CFGR_PPRE2_OFFSET);
          if(ucTemp >= NUM_APB_PRESCALERS)
          {
             ucAPBPrescaler = aucAPB_PRESCALERS[ucTemp - NUM_APB_PRESCALERS];

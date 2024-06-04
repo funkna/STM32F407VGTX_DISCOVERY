@@ -152,4 +152,18 @@ typedef enum
    SPI_MAX
 } SPIControllerEnum;
 
+// -------------------------------------------------------------
+// USART Controller Enumeration
+// -------------------------------------------------------------
+typedef enum
+{
+   USART1 = 0,
+   USART2,
+   USART3,
+   USART4,
+   USART5,
+   USART6,
+   USART_MAX
+} USARTControllerEnum;
+
 #endif // PERIPHERALS_H_

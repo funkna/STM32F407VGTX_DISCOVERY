@@ -20,6 +20,7 @@
 #include "drivers/rcc_driver.h"
 #include "drivers/spi_driver.h"
 #include "drivers/i2c_driver.h"
+#include "drivers/usart_driver.h"
 #include "drivers/syscfg_driver.h"
 
 // APIs
@@ -45,6 +46,8 @@ static BOOL InitializeDriversAndAPI()
    bInitSuccess &= SPI_Initialize(SPI2);
    bInitSuccess &= I2C_Initialize(I2C1);
    bInitSuccess &= I2C_Initialize(I2C2);
+   bInitSuccess &= USART_Initialize(USART1);
+   bInitSuccess &= USART_Initialize(USART2);
 
    // Initialize API
    bInitSuccess &= LED_Initialize();

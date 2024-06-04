@@ -10,7 +10,8 @@
 // Typedefs ---------------------------------------------------------------------------------------
 typedef enum
 {
-   CLKTYPE_PCLK1
+   CLKTYPE_PCLK1 = 0,
+   CLKTYPE_PCLK2
 } ClockTypeEnum;
 
 typedef enum
