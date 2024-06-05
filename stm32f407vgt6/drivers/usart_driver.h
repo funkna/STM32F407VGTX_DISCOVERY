@@ -11,14 +11,6 @@
 
 typedef enum
 {
-   USARTMODE_TXRX = 0,
-   USARTMODE_TX,
-   USARTMODE_RX
-}
-USARTModeEnum;
-
-typedef enum
-{
    USARTBAUD_1200 = 0,
    USARTBAUD_2400,
    USARTBAUD_9600,
@@ -65,13 +57,26 @@ USARTFlowControlEnum;
 
 typedef struct
 {
-   USARTModeEnum eMode;
    USARTBaudRateEnum eBaudRate;
    USARTWordLengthEnum eWordLength;
    USARTParityBitsEnum ePartiy;
    USARTStopBitsEnum eStopBits;
    USARTFlowControlEnum eFlowControl;
 } USARTConfigurationStruct;
+
+typedef enum
+{
+   USARTTRANSFER_WRITE = 0,
+   USARTTRANSFER_READ
+} USARTTransferTypeEnum;
+
+typedef enum
+{
+   USARTSTATE_IDLE = 0x00,
+   USARTSTATE_TX_IN_PROGRESS = 0x01,
+   USARTSTATE_RX_IN_PROGRESS = 0x02,
+   USARTSTATE_ERROR = 0x04
+} USARTTransferStateEnum;
 
 // Functions --------------------------------------------------------------------------------------
 
@@ -113,6 +118,14 @@ BOOL USART_Disable(
    USARTControllerEnum eController_);
 
 // -------------------------------------------------------------
+// Write data to a USART controller.
+// -------------------------------------------------------------
+BOOL USART_WriteData(
+   USARTControllerEnum eController_,
+   const UCHAR* pucData_,
+   UINT uiDataLength_);
+
+// -------------------------------------------------------------
 // Read data from a USART controller.
 // -------------------------------------------------------------
 BOOL USART_ReadData(
@@ -121,11 +134,24 @@ BOOL USART_ReadData(
    UINT uiDataLength_);
 
 // -------------------------------------------------------------
-// Write data to a USART controller.
+// Start a transfer on the USART lines.
 // -------------------------------------------------------------
-BOOL USART_WriteData(
+BOOL USART_Transfer(
    USARTControllerEnum eController_,
-   const UCHAR* pucData_,
-   UINT uiDataLength_);
+   USARTTransferTypeEnum eTransferType_,
+   UCHAR* pucBuffer_,
+   UINT uiSize_);
+
+// -------------------------------------------------------------
+// Get the transfer state of an USART controller.
+// -------------------------------------------------------------
+UCHAR USART_GetStates(
+   USARTControllerEnum eController_);
+
+// -------------------------------------------------------------
+// Enable an interrupt vector for an USART controller.
+// -------------------------------------------------------------
+BOOL USART_ConfigureAsInterrupt(
+   USARTControllerEnum eController_);
 
 #endif // USART_DRIVER_H_

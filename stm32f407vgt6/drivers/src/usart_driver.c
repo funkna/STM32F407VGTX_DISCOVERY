@@ -4,14 +4,25 @@
 #include "devices/usart.h"
 #include "drivers/gpio_driver.h"
 #include "drivers/rcc_driver.h"
+#include "drivers/nvic_driver.h"
 #include "drivers/usart_driver.h"
 
 // Defines ----------------------------------------------------------------------------------------
 // Typedefs ---------------------------------------------------------------------------------------
 typedef struct
 {
+   UCHAR* pucDataBuffer;
+   UINT uiDataBufferSize; // The size of the data to write or read.
+   UINT uiDataBytes; // The current number of bytes received/transmitted.
+} USARTBufferStruct;
+
+typedef struct
+{
    USARTRegistersStruct* pstRegisters;
    USARTConfigurationStruct stConfiguration;
+   USARTBufferStruct stTxBuffer;
+   USARTBufferStruct stRxBuffer;
+   UCHAR ucTransferStates;
 } USARTDeviceStruct;
 
 // Statics, Externs & Globals ---------------------------------------------------------------------
@@ -59,6 +70,55 @@ static STM32F407VGT6_PeriperalEnum USARTEnumToSTM32Enum(
          return PERIPHERAL_INVALID;
       }
    }
+}
+
+// -------------------------------------------------------------
+static void USART_IRQHandler(
+   USARTControllerEnum eController_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TXE)
+   {
+      astTheUSARTDevices[eController_].pstRegisters->DR = *(astTheUSARTDevices[eController_].stTxBuffer.pucDataBuffer);
+      astTheUSARTDevices[eController_].stTxBuffer.pucDataBuffer++;
+      astTheUSARTDevices[eController_].stTxBuffer.uiDataBytes++;
+
+      if(astTheUSARTDevices[eController_].stTxBuffer.uiDataBytes == astTheUSARTDevices[eController_].stTxBuffer.uiDataBufferSize)
+      {
+         astTheUSARTDevices[eController_].pstRegisters->CR1 &= ~CR1_TXEIE;
+         astTheUSARTDevices[eController_].ucTransferStates &= ~USARTSTATE_TX_IN_PROGRESS;
+      }
+   }
+
+   if(astTheUSARTDevices[eController_].pstRegisters->SR & SR_RXNE)
+   {
+      *(astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer) = astTheUSARTDevices[eController_].pstRegisters->DR;
+      astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer++;
+      astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes++;
+
+      if(astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes == astTheUSARTDevices[eController_].stRxBuffer.uiDataBufferSize)
+      {
+         astTheUSARTDevices[eController_].pstRegisters->CR1 &= ~CR1_RXNEIE;
+         astTheUSARTDevices[eController_].ucTransferStates &= ~USARTSTATE_RX_IN_PROGRESS;
+      }
+   }
+}
+
+// -------------------------------------------------------------
+// USART EV IRQ Vector Callbacks
+// -------------------------------------------------------------
+void USART1_IRQHandler(void)
+{
+   USART_IRQHandler(USART1);
+}
+
+void USART2_IRQHandler(void)
+{
+   USART_IRQHandler(USART2);
+}
+
+void USART3_IRQHandler(void)
+{
+   USART_IRQHandler(USART3);
 }
 
 // -------------------------------------------------------------
@@ -161,32 +221,9 @@ BOOL USART_SetConfig(
    UINT uiCR2Value = astTheUSARTDevices[eController_].pstRegisters->CR2;
    UINT uiCR3Value = astTheUSARTDevices[eController_].pstRegisters->CR3;
 
-   // USART mode
-   switch(pstConfiguration_->eMode)
-   {
-      case USARTMODE_TXRX:
-      {
-         uiCR1Value |= CR1_TE;
-         uiCR1Value |= CR1_RE;
-         break;
-      }
-      case USARTMODE_TX:
-      {
-         uiCR1Value |= CR1_TE;
-         uiCR1Value &= ~CR1_RE;
-         break;
-      }
-      case USARTMODE_RX:
-      {
-         uiCR1Value &= ~CR1_TE;
-         uiCR1Value |= CR1_RE;
-         break;
-      }
-      default:
-      {
-         return FALSE;
-      }
-   }
+   // Enable Tx & Rx
+   uiCR1Value |= CR1_TE;
+   uiCR1Value |= CR1_RE;
 
    // Baud Rate
    switch(pstConfiguration_->eBaudRate)
@@ -406,3 +443,96 @@ BOOL USART_WriteData(
 
    return TRUE;
 }
+
+// -------------------------------------------------------------
+BOOL USART_Transfer(
+   USARTControllerEnum eController_,
+   USARTTransferTypeEnum eTransferType_,
+   UCHAR* pucBuffer_,
+   UINT uiSize_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   if(eTransferType_ == USARTTRANSFER_READ)
+   {
+      if(!(astTheUSARTDevices[eController_].ucTransferStates & USARTSTATE_RX_IN_PROGRESS))
+      {
+         astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer = pucBuffer_;
+         astTheUSARTDevices[eController_].stRxBuffer.uiDataBufferSize = uiSize_;
+         astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes = 0;
+
+         astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_RXNEIE;
+         astTheUSARTDevices[eController_].ucTransferStates |= USARTSTATE_RX_IN_PROGRESS;
+      }
+      else
+      {
+         return FALSE;
+      }
+   }
+
+   if(eTransferType_ == USARTTRANSFER_WRITE)
+   {
+      if(!(astTheUSARTDevices[eController_].ucTransferStates & USARTSTATE_TX_IN_PROGRESS))
+      {
+         astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer = pucBuffer_;
+         astTheUSARTDevices[eController_].stRxBuffer.uiDataBufferSize = uiSize_;
+         astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes = 0;
+
+         astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_TXEIE;
+         astTheUSARTDevices[eController_].ucTransferStates |= USARTSTATE_TX_IN_PROGRESS;
+      }
+      else
+      {
+         return FALSE;
+      }
+   }
+
+   return FALSE;
+}
+
+// -------------------------------------------------------------
+USARTTransferStateEnum USART_GetStates(
+   USARTControllerEnum eController_)
+{
+   return astTheUSARTDevices[eController_].ucTransferStates;
+}
+
+// -------------------------------------------------------------
+BOOL USART_ConfigureAsInterrupt(
+   USARTControllerEnum eController_)
+{
+   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   {
+      return FALSE;
+   }
+
+   IRQVectorEnum eIRQVector = IRQ_VECTOR_MAX;
+   switch(eController_)
+   {
+      case USART1:
+      {
+         eIRQVector = IRQ_VECTOR_USART1;
+         break;
+      }
+      case USART2:
+      {
+         eIRQVector = IRQ_VECTOR_USART2;
+         break;
+      }
+      case USART3:
+      {
+         eIRQVector = IRQ_VECTOR_USART3;
+         break;
+      }
+      default:
+         return FALSE;
+   }
+
+   astTheUSARTDevices[eController_].ucTransferStates = USARTSTATE_IDLE;
+
+   return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
+}
+
