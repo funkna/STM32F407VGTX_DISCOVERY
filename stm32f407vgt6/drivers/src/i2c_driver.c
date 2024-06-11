@@ -34,7 +34,7 @@ GPIOConfigurationStruct stTheI2CPinConfig = {
    GPIOMODE_ALT_FUNC,
    GPIOTYPE_OPENDRAIN,
    GPIOSPEED_HI,
-   GPIOPUPD_PU,
+   GPIOPUPD_NONE,
    GPIOALTFUNC_AF4
 };
 static I2CDeviceStruct astTheI2CDevices[I2C_MAX] = {NULL};

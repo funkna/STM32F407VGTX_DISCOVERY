@@ -15,6 +15,7 @@
 //--------------------------------------------------------------
 // Typedefs for primitives.
 //--------------------------------------------------------------
+typedef char      SCHAR;
 typedef int8_t    CHAR;
 typedef int16_t   SHORT;
 typedef int32_t   INT;

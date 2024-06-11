@@ -14,11 +14,9 @@
 
 // Drivers
 #include "drivers/nvic_driver.h"
-
 #include "drivers/exti_driver.h"
 #include "drivers/gpio_driver.h"
 #include "drivers/rcc_driver.h"
-#include "drivers/spi_driver.h"
 #include "drivers/i2c_driver.h"
 #include "drivers/usart_driver.h"
 #include "drivers/syscfg_driver.h"
@@ -28,7 +26,7 @@
 #include "led.h"
 
 // Apps
-#include "user_app_1.h"
+#include "rtc_lcd.h"
 
 static BOOL InitializeDriversAndAPI()
 {
@@ -40,13 +38,9 @@ static BOOL InitializeDriversAndAPI()
    bInitSuccess &= EXTI_Initialize();
    bInitSuccess &= SYSCFG_Initialize();
    bInitSuccess &= GPIO_Initialize(GPIO_PORT_A); // Buttons
-   bInitSuccess &= GPIO_Initialize(GPIO_PORT_B); // SPI
+   bInitSuccess &= GPIO_Initialize(GPIO_PORT_B); // I2C
    bInitSuccess &= GPIO_Initialize(GPIO_PORT_D); // LEDs
-   bInitSuccess &= SPI_Initialize(SPI1);
-   bInitSuccess &= SPI_Initialize(SPI2);
    bInitSuccess &= I2C_Initialize(I2C1);
-   bInitSuccess &= I2C_Initialize(I2C2);
-   bInitSuccess &= USART_Initialize(USART1);
    bInitSuccess &= USART_Initialize(USART2);
 
    // Initialize API
@@ -60,7 +54,7 @@ static BOOL InitializeApplications()
 {
    // Initialize Apps
    BOOL bAppInitSuccess = TRUE;
-   bAppInitSuccess &= Initialize_UserApp1();
+   bAppInitSuccess &= Initialize_RTCLCD();
    return bAppInitSuccess;
 }
 
@@ -81,7 +75,7 @@ int main(void)
    while(TRUE)
    {
       // Run Apps
-      Run_UserApp1();
+      Run_RTCLCD();
    }
-   Exit_UserApp1();
+   Exit_RTCLCD();
 }

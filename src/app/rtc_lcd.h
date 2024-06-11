@@ -1,6 +1,6 @@
 // Redundancy Prevention --------------------------------------------------------------------------
-#ifndef USER_APP_1_H_
-#define USER_APP_1_H_
+#ifndef RTC_LCD_H_
+#define RTC_LCD_H_
 
 // Includes ---------------------------------------------------------------------------------------
 #include "types.h"
@@ -10,8 +10,8 @@
 // Typedefs ---------------------------------------------------------------------------------------
 
 // Functions --------------------------------------------------------------------------------------
-BOOL Initialize_UserApp1();
-void Run_UserApp1();
-BOOL Exit_UserApp1();
+BOOL Initialize_RTCLCD();
+void Run_RTCLCD();
+BOOL Exit_RTCLCD();
 
-#endif // USER_APP_1_H_
+#endif // RTC_LCD_H_
