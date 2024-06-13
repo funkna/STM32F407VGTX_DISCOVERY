@@ -34,6 +34,7 @@ static BOOL InitializeDriversAndAPI()
 
    // Initialize Drivers
    bInitSuccess &= RCC_Initialize();
+   bInitSuccess &= SYSTICK_Initialize();
    bInitSuccess &= NVIC_Initialize();
    bInitSuccess &= EXTI_Initialize();
    bInitSuccess &= SYSCFG_Initialize();

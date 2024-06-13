@@ -42,7 +42,7 @@
 //--------------------------------------------------------------
 // #define PERIPHERAL_ADDRESS_FPU                     (UL)
 // #define PERIPHERAL_ADDRESS_MPU                     (UL)
-// #define PERIPHERAL_ADDRESS_SYSTICK                 (UL)
+#define PERIPHERAL_ADDRESS_SYSTICK                 (0xE000E010UL)
 // #define PERIPHERAL_ADDRESS_SCB                     (UL)
 #define PERIPHERAL_ADDRESS_NVIC                    (0xE000E100UL)
 
