@@ -2,11 +2,14 @@
 #include <string.h>
 #include "ext/ds1307.h"
 #include "rtc_lcd.h"
+#include "time.h"
+
+#include "drivers/systick_driver.h"
 
 // Defines ----------------------------------------------------------------------------------------
 // Statics, Externs & Globals ---------------------------------------------------------------------
 static DS1307TimeKeepingStruct stTheLastTime;
-static DS1307TimeKeepingStruct stTheCurrentTime = {0, 0, 0, 1, 1, 1, 24}; // Beginning of 2024.
+static DS1307TimeKeepingStruct stTheCurrentTime = {0, 0, 0, 1, 1, 24}; // Beginning of 2024.
 
 // Functions --------------------------------------------------------------------------------------
 
@@ -15,6 +18,10 @@ static void PrintTimeKeepingStruct(
    DS1307TimeKeepingStruct* pstTimeAndDate_)
 {
    Console_Printf("[%02d:%02d:%02d] (%02d/%02d/%02d)",
+      pstTimeAndDate_->ucHours, pstTimeAndDate_->ucMinutes, pstTimeAndDate_->ucSeconds,
+      pstTimeAndDate_->ucDay, pstTimeAndDate_->ucMonth, pstTimeAndDate_->ucYear);
+
+   HD440780U_WriteString("[%02d:%02d:%02d] (%02d/%02d/%02d)",
       pstTimeAndDate_->ucHours, pstTimeAndDate_->ucMinutes, pstTimeAndDate_->ucSeconds,
       pstTimeAndDate_->ucDay, pstTimeAndDate_->ucMonth, pstTimeAndDate_->ucYear);
 }
@@ -31,6 +38,20 @@ BOOL Initialize_RTCLCD()
    bSuccess &= DS1307_SetTimeAndDate(&stTheCurrentTime);
    bSuccess &= DS1307_EnableTimeKeeping();
    Console_Printf("DS1307 Time Keeping Enabled.");
+
+   bSuccess &= HD440780U_Initialize();
+   DelayMS(2);
+   bSuccess &= HD440780U_SendCommand(0x0E); // Turn on display and cursor.
+   DelayMS(2);
+   bSuccess &= HD440780U_SendCommand(0x01); // Clear the display.
+   DelayMS(2);
+   bSuccess &= HD440780U_SendCommand(0x28); // Set data length to 4 bits, number of lines to 2 and character font to 5x8.
+   DelayMS(2);
+   bSuccess &= HD440780U_SendCommand(0x06); // Set DRAM address to 0 and increment cursor with DRAM writes.
+   // DelayMS(2);
+   // bSuccess &= HD440780U_SendCommand(0x80); // Set DRAM address to 0.
+
+   Console_Printf("LCD Initialized.");
 
    return bSuccess;
 }
