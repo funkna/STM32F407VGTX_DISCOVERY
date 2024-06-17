@@ -61,15 +61,21 @@ BOOL HD440780U_Initialize()
    bSuccess &= GPIO_WritePin(HD440780U_GPIO_PORT, HD440780U_PIN_RS, GPIO_LO);
    bSuccess &= GPIO_WritePin(HD440780U_GPIO_PORT, HD440780U_PIN_RW, GPIO_LO);
 
-   bSuccess &= DataWrite4Bit(0x03);
+   bSuccess &= DataWrite4Bit(0x3);
 
    DelayMS(5);
 
-   bSuccess &= DataWrite4Bit(0x03);
+   bSuccess &= DataWrite4Bit(0x3);
 
    DelayMS(1);
 
-   bSuccess &= DataWrite4Bit(0x03);
+   bSuccess &= DataWrite4Bit(0x3);
+   bSuccess &= DataWrite4Bit(0x2);
+
+   bSuccess &= HD440780U_SendCommand(0x20);
+   bSuccess &= HD440780U_SendCommand(0x08);
+   bSuccess &= HD440780U_SendCommand(0x01);
+   bSuccess &= HD440780U_SendCommand(0x07);
 
    return bSuccess;
 }
@@ -102,8 +108,8 @@ BOOL HD440780U_WriteByte(
 
    DelayMS(1);
 
-   DataWrite4Bit(ucByte_ & 0x0F);
    DataWrite4Bit((ucByte_ & 0xF0) >> 4);
+   DataWrite4Bit(ucByte_ & 0x0F);
 
    DelayMS(1);
 
@@ -114,12 +120,19 @@ BOOL HD440780U_WriteByte(
 
 // -------------------------------------------------------------
 void HD440780U_WriteString(
+   HD440780ULineEnum eLine_,
    const SCHAR* szFormat_,
    ...)
 {
-   (void)HD440780U_SendCommand(0x01); // Clear the display.
-   DelayMS(2);
-   (void)HD440780U_SendCommand(0x06); // Set DRAM address to 0 and increment cursor with DRAM writes.
+   if(eLine_ == HD440780U_LINE_1)
+   {
+      (void)HD440780U_SendCommand(0x80); // Set DRAM address to column 0 in line 1.
+   }
+   else
+   {
+      (void)HD440780U_SendCommand((0x80 | 0x40)); // Set DRAM address to column 0 in line 2.
+
+   }
 
    static SCHAR acBuffer[HD440780U_LINE_BUFFER];
 
