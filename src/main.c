@@ -25,9 +25,6 @@
 #include "button.h"
 #include "led.h"
 
-// Apps
-#include "rtc_lcd.h"
-
 static BOOL InitializeDriversAndAPI()
 {
    BOOL bInitSuccess = TRUE;
@@ -51,13 +48,6 @@ static BOOL InitializeDriversAndAPI()
    return bInitSuccess;
 }
 
-static BOOL InitializeApplications()
-{
-   // Initialize Apps
-   BOOL bAppInitSuccess = TRUE;
-   bAppInitSuccess &= Initialize_RTCLCD();
-   return bAppInitSuccess;
-}
 
 int main(void)
 {
@@ -67,16 +57,7 @@ int main(void)
       while(TRUE);
    }
 
-   if(!InitializeApplications())
-   {
-      LED_On(LED_ORANGE);
-      while(TRUE);
-   }
-
    while(TRUE)
    {
-      // Run Apps
-      Run_RTCLCD();
    }
-   Exit_RTCLCD();
 }

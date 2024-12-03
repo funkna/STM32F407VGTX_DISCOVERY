@@ -1,6 +1,6 @@
 .settings
 .vscode
-Debug
-Release
+build
 
 *.ld
+*.o
