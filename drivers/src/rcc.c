@@ -1,37 +1,43 @@
-// Includes ---------------------------------------------------------------------------------------
-#include "constants.h"
-#include "stm32f407vgt6/rcc.h"
-#include "drivers/rcc_driver.h"
+//------------------------------------------------------------------------------
+//! \file rcc.c
+//! \brief Reset and Clock Control driver implementation.
+//------------------------------------------------------------------------------
 
-// Defines ----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
+#include "constants.h"
+#include "rcc.h"
+
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
 #define NUM_AHB_PRESCALERS (8)
 #define NUM_APB_PRESCALERS (4)
 
-// Typedefs ---------------------------------------------------------------------------------------
-// Statics, Externs & Globals ---------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
 static RCCRegistersStruct* pstTheRCCRegisters = NULL;
-static const UCHAR aucAHB_PRESCALERS[NUM_AHB_PRESCALERS] = {2, 4, 8, 16, 64, 128, 256, 512};
-static const UCHAR aucAPB_PRESCALERS[NUM_APB_PRESCALERS] = {2, 4, 8, 16};
+static const UINT auiAHB_PRESCALERS[NUM_AHB_PRESCALERS] = {2, 4, 8, 16, 64, 128, 256, 512};
+static const UINT auiAPB_PRESCALERS[NUM_APB_PRESCALERS] = {2, 4, 8, 16};
 
-// Functions --------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------
-BOOL RCC_Initialize()
+//------------------------------------------------------------------------------
+void
+RCC_Initialize()
 {
-   pstTheRCCRegisters = GetRCCController();
-   return (pstTheRCCRegisters != NULL);
+   pstTheRCCRegisters = (RCCRegistersStruct*)PERIPHERAL_ADDRESS_RCC;
 }
 
-//--------------------------------------------------------------
-BOOL RCC_EnablePeripheralClock(
+//------------------------------------------------------------------------------
+BOOL
+RCC_EnablePeripheralClock(
    STM32F407VGT6_PeriperalEnum ePeripheral_)
 {
-   if(pstTheRCCRegisters == NULL)
-   {
-      return FALSE;
-   }
-
-   BOOL bEnabled = TRUE;
    switch(ePeripheral_)
    {
       case PERIPHERAL_DAC:
@@ -286,24 +292,18 @@ BOOL RCC_EnablePeripheralClock(
       }
       default:
       {
-         bEnabled = FALSE;
-         break;
+         return FALSE;
       }
    }
 
-   return bEnabled;
+   return TRUE;
 }
 
-//--------------------------------------------------------------
-BOOL RCC_ResetPeripheralClock(
+//------------------------------------------------------------------------------
+BOOL
+RCC_ResetPeripheralClock(
    STM32F407VGT6_PeriperalEnum ePeripheral_)
 {
-   if(pstTheRCCRegisters == NULL)
-   {
-      return FALSE;
-   }
-
-   BOOL bReset = TRUE;
    switch(ePeripheral_)
    {
       case PERIPHERAL_DAC:
@@ -558,16 +558,16 @@ BOOL RCC_ResetPeripheralClock(
       }
       default:
       {
-         bReset = FALSE;
-         break;
+         return FALSE;
       }
    }
 
-   return bReset;
+   return TRUE;
 }
 
-//--------------------------------------------------------------
-ClockSourceEnum RCC_GetSystemClockSource()
+//------------------------------------------------------------------------------
+ClockSourceEnum
+RCC_GetSystemClockSource()
 {
    if(pstTheRCCRegisters == NULL)
    {
@@ -577,73 +577,70 @@ ClockSourceEnum RCC_GetSystemClockSource()
    return (ClockSourceEnum)((pstTheRCCRegisters->CFGR & CFGR_SWS) >> CFGR_SWS_OFFSET);
 }
 
-//--------------------------------------------------------------
-UINT RCC_GetClockFrequency(
+//------------------------------------------------------------------------------
+UINT
+RCC_GetClockFrequency(
    ClockTypeEnum eClockType_)
 {
    UINT uiClockSourceFrequencyHz = 0;
+   UINT uiAHBPrescaler = 1;
+   UINT uiAPBPrescaler = 1;
+   UINT uiTemp = 0;
+   UINT uiClockFrequency = 0;
+
    switch(RCC_GetSystemClockSource())
    {
       case CLKSRC_HSI:
       {
-         uiClockSourceFrequencyHz = HSI_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
+         uiClockSourceFrequencyHz = HSI_RC_CLK_FREQ_MHZ * HZ_TO_MHZ;
          break;
       }
       case CLKSRC_HSE:
       {
-         uiClockSourceFrequencyHz = HSE_RC_CLK_FREQ_MHZ * MHZ_TO_HZ;
+         uiClockSourceFrequencyHz = HSE_RC_CLK_FREQ_MHZ * HZ_TO_MHZ;
          break;
       }
       case CLKSRC_PLL: // TODO: Implement this.
       default:
       {
-         break;
+         return 0; // Cannot do anything without this being determined.
       }
    }
 
-   if(uiClockSourceFrequencyHz == 0)
-   {
-      return 0; // Cannot do anything without this being determined.
-   }
-
-   UCHAR ucAHBPrescaler = 1;
-   UCHAR ucAPBPrescaler = 1;
-   UCHAR ucTemp = 0;
-   UINT uiClockFrequency = 0;
    switch(eClockType_)
    {
       case CLKTYPE_PCLK1:
       {
-         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
-         if(ucTemp >= NUM_AHB_PRESCALERS)
+         uiTemp = ((pstTheRCCRegisters->CFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
+         if(uiTemp >= NUM_AHB_PRESCALERS)
          {
-            ucAHBPrescaler = aucAHB_PRESCALERS[ucTemp - NUM_AHB_PRESCALERS];
+            uiAHBPrescaler = auiAHB_PRESCALERS[uiTemp - NUM_AHB_PRESCALERS];
          }
 
-         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_PPRE1) >> CFGR_PPRE1_OFFSET);
-         if(ucTemp >= NUM_APB_PRESCALERS)
+         uiTemp = ((pstTheRCCRegisters->CFGR & CFGR_PPRE1) >> CFGR_PPRE1_OFFSET);
+         if(uiTemp >= NUM_APB_PRESCALERS)
          {
-            ucAPBPrescaler = aucAPB_PRESCALERS[ucTemp - NUM_APB_PRESCALERS];
+            uiAPBPrescaler = auiAPB_PRESCALERS[uiTemp - NUM_APB_PRESCALERS];
          }
 
-         uiClockFrequency = (uiClockSourceFrequencyHz / ucAHBPrescaler) / ucAPBPrescaler;
+         uiClockFrequency = (uiClockSourceFrequencyHz / uiAHBPrescaler) / uiAPBPrescaler;
          break;
       }
       case CLKTYPE_PCLK2:
       {
-         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
-         if(ucTemp >= NUM_AHB_PRESCALERS)
+         uiTemp = ((pstTheRCCRegisters->CFGR & CFGR_HPRE) >> CFGR_HPRE_OFFSET);
+         if(uiTemp >= NUM_AHB_PRESCALERS)
          {
-            ucAHBPrescaler = aucAHB_PRESCALERS[ucTemp - NUM_AHB_PRESCALERS];
+            uiAHBPrescaler = auiAHB_PRESCALERS[uiTemp - NUM_AHB_PRESCALERS];
          }
 
-         ucTemp = ((pstTheRCCRegisters->CFGR & CFGR_PPRE2) >> CFGR_PPRE2_OFFSET);
-         if(ucTemp >= NUM_APB_PRESCALERS)
+         uiTemp = ((pstTheRCCRegisters->CFGR & CFGR_PPRE2) >> CFGR_PPRE2_OFFSET);
+         if(uiTemp >= NUM_APB_PRESCALERS)
          {
-            ucAPBPrescaler = aucAPB_PRESCALERS[ucTemp - NUM_APB_PRESCALERS];
+            uiAPBPrescaler = auiAPB_PRESCALERS[uiTemp - NUM_APB_PRESCALERS];
          }
 
-         uiClockFrequency = (uiClockSourceFrequencyHz / ucAHBPrescaler) / ucAPBPrescaler;
+         uiClockFrequency = (uiClockSourceFrequencyHz / uiAHBPrescaler) / uiAPBPrescaler;
          break;
       }
       default:
@@ -651,5 +648,6 @@ UINT RCC_GetClockFrequency(
          break;
       }
    }
+
    return uiClockFrequency;
 }
