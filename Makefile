@@ -72,10 +72,3 @@ clean:
 # Flash
 flash:
 	@openocd -s "C:/Program Files (x86)/OpenOCD/share/openocd/scripts" -f interface/stlink-v1.cfg -f target/stm32f4x.cfg -c "program $(BUILD_DIR)/$(TARGET) verify reset exit"
-
-# Debug
-gdb-server_stlink:
-	st-util
-
-gdb-client: $(TARGET)
-	$(GDB) -tui $(TARGET)
