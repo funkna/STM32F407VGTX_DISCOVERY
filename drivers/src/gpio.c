@@ -1,9 +1,18 @@
-// Includes ---------------------------------------------------------------------------------------
-#include "stm32f407vgt6/gpio.h"
-#include "drivers/gpio_driver.h"
-#include "drivers/rcc_driver.h"
+//------------------------------------------------------------------------------
+//! \file gpio.c
+//! \brief General Purpose Input/Output driver implementation.
+//------------------------------------------------------------------------------
 
-// Defines ----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
+#include "gpio.h"
+#include "rcc.h"
+#include <string.h>
+
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
 #define NUM_CONFIG_BITS_MODE        (2)
 #define NUM_CONFIG_BITS_OTYPE       (1)
 #define NUM_CONFIG_BITS_OSPEED      (2)
@@ -11,18 +20,27 @@
 #define NUM_CONFIG_BITS_ALTFUNC     (4)
 #define NUM_ALTFUNCS_PER_AFR        (8)
 
-// Typedefs ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! \brief GPIO Device description
+//------------------------------------------------------------------------------
 typedef struct
 {
    GPIORegistersStruct* pstRegisters;
    GPIOConfigurationStruct stConfiguration;
 } GPIODeviceStruct;
 
-// Statics, Externs & Globals ---------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
 static GPIODeviceStruct astTheGPIODevices[GPIO_PORT_MAX];
 
-// Functions --------------------------------------------------------------------------------------
-static STM32F407VGT6_PeriperalEnum GPIOEnumToSTM32Enum(
+//------------------------------------------------------------------------------
+static STM32F407VGT6_PeriperalEnum
+GPIOEnumToSTM32Enum(
    GPIOPortEnum ePort_)
 {
    switch(ePort_)
@@ -70,28 +88,81 @@ static STM32F407VGT6_PeriperalEnum GPIOEnumToSTM32Enum(
    }
 }
 
-// -------------------------------------------------------------
-BOOL GPIO_Initialize(
+//------------------------------------------------------------------------------
+static GPIORegistersStruct*
+GetGPIOController(
    GPIOPortEnum ePort_)
 {
-   BOOL bSuccess = FALSE;
+   switch(ePort_)
+   {
+      case GPIO_PORT_A:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOA;
+      }
+      case GPIO_PORT_B:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOB;
+      }
+      case GPIO_PORT_C:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOC;
+      }
+      case GPIO_PORT_D:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOD;
+      }
+      case GPIO_PORT_E:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOE;
+      }
+      case GPIO_PORT_F:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOF;
+      }
+      case GPIO_PORT_G:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOG;
+      }
+      case GPIO_PORT_H:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOH;
+      }
+      case GPIO_PORT_I:
+      {
+         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOI;
+      }
+      default:
+      {
+         return NULL;
+      }
+   }
+}
+
+//------------------------------------------------------------------------------
+BOOL
+GPIO_Initialize(
+   GPIOPortEnum ePort_)
+{
    astTheGPIODevices[ePort_].pstRegisters = GetGPIOController(ePort_);
    if(astTheGPIODevices[ePort_].pstRegisters != NULL)
    {
-      bSuccess = RCC_EnablePeripheralClock(GPIOEnumToSTM32Enum(ePort_));
+      return RCC_EnablePeripheralClock(GPIOEnumToSTM32Enum(ePort_));
    }
-   return bSuccess;
+
+   return FALSE;
 }
 
-// -------------------------------------------------------------
-BOOL GPIO_Reset(
+//------------------------------------------------------------------------------
+BOOL
+GPIO_Reset(
    GPIOPortEnum ePort_)
 {
    return RCC_ResetPeripheralClock(GPIOEnumToSTM32Enum(ePort_));
 }
 
-// -------------------------------------------------------------
-BOOL GPIO_SetConfig(
+//------------------------------------------------------------------------------
+BOOL
+GPIO_SetConfig(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_,
    const GPIOConfigurationStruct* pstConfiguration_)
@@ -127,21 +198,18 @@ BOOL GPIO_SetConfig(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-GPIOConfigurationStruct* GPIO_GetConfig(
+//------------------------------------------------------------------------------
+GPIOConfigurationStruct*
+GPIO_GetConfig(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_)
 {
-   if(astTheGPIODevices[ePort_].pstRegisters == NULL)
-   {
-      return NULL;
-   }
-
-   return &(astTheGPIODevices[ePort_].stConfiguration);
+   return (astTheGPIODevices[ePort_].pstRegisters == NULL) ? NULL : &(astTheGPIODevices[ePort_].stConfiguration);
 }
 
-// -------------------------------------------------------------
-BOOL GPIO_ReadPin(
+//------------------------------------------------------------------------------
+BOOL
+GPIO_ReadPin(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_,
    GPIOStateEnum* peState_)
@@ -153,12 +221,12 @@ BOOL GPIO_ReadPin(
    }
 
    *peState_ = (astTheGPIODevices[ePort_].pstRegisters->IDR >> ePin_) & GPIO_HI;
-
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL GPIO_WritePin(
+//------------------------------------------------------------------------------
+BOOL
+GPIO_WritePin(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_,
    GPIOStateEnum eState_)
@@ -180,8 +248,9 @@ BOOL GPIO_WritePin(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL GPIO_TogglePin(
+//------------------------------------------------------------------------------
+BOOL
+GPIO_TogglePin(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_)
 {
