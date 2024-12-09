@@ -1,17 +1,35 @@
-// Includes ---------------------------------------------------------------------------------------
-#include "constants.h"
-#include "stm32f407vgt6/i2c.h"
-#include "drivers/gpio_driver.h"
-#include "drivers/rcc_driver.h"
-#include "drivers/i2c_driver.h"
-#include "drivers/nvic_driver.h"
+//------------------------------------------------------------------------------
+//! \file i2c.c
+//! \brief Inter-Integrated Circuit driver implementation.
+//------------------------------------------------------------------------------
 
-// Defines ----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
+#include <string.h>
+#include "constants.h"
+#include "i2c.h"
+#include "gpio.h"
+#include "rcc.h"
+#include "nvic.h"
+
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
 #define I2C_FREQ_100KHZ (100000)
 #define I2C_FREQ_200KHZ (200000)
 
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
 
-// Typedefs ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! \brief Transfer buffers description
+//------------------------------------------------------------------------------
 typedef struct
 {
    UCHAR ucAddress;
@@ -21,6 +39,9 @@ typedef struct
    UINT uiDataBytes; // The current number of bytes received/transmitted.
 } I2CBuffersStruct;
 
+//------------------------------------------------------------------------------
+//! \brief I2C Device description
+//------------------------------------------------------------------------------
 typedef struct
 {
    I2CRegistersStruct* pstRegisters;
@@ -29,18 +50,22 @@ typedef struct
    I2CTransferStateEnum eTransferState;
 } I2CDeviceStruct;
 
-// Statics, Externs & Globals ---------------------------------------------------------------------
-GPIOConfigurationStruct stTheI2CPinConfig = {
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
+static I2CDeviceStruct astTheI2CDevices[I2C_MAX] = {NULL};
+
+static GPIOConfigurationStruct stTheI2CPinConfig = {
    GPIOMODE_ALT_FUNC,
    GPIOTYPE_OPENDRAIN,
    GPIOSPEED_HI,
    GPIOPUPD_NONE,
    GPIOALTFUNC_AF4
 };
-static I2CDeviceStruct astTheI2CDevices[I2C_MAX] = {NULL};
 
-// Functions --------------------------------------------------------------------------------------
-static STM32F407VGT6_PeriperalEnum I2CEnumToSTM32Enum(
+//------------------------------------------------------------------------------
+static STM32F407VGT6_PeriperalEnum
+I2CEnumToSTM32Enum(
    I2CControllerEnum eController_)
 {
    switch(eController_)
@@ -64,8 +89,29 @@ static STM32F407VGT6_PeriperalEnum I2CEnumToSTM32Enum(
    }
 }
 
-// -------------------------------------------------------------
-static void I2C_IRQHandler(
+//------------------------------------------------------------------------------
+static I2CRegistersStruct*
+GetI2CController(
+   I2CControllerEnum eController_)
+{
+   switch(eController_)
+   {
+      case I2C1:
+         return (I2CRegistersStruct*)PERIPHERAL_ADDRESS_I2C1;
+      case I2C2:
+         return (I2CRegistersStruct*)PERIPHERAL_ADDRESS_I2C2;
+      case I2C3:
+         return (I2CRegistersStruct*)PERIPHERAL_ADDRESS_I2C3;
+      default:
+         return NULL;
+   }
+}
+
+//------------------------------------------------------------------------------
+//! \brief IRQ Handler
+//------------------------------------------------------------------------------
+static void
+I2C_IRQHandler(
    I2CControllerEnum eController_)
 {
    switch(astTheI2CDevices[eController_].eTransferState)
@@ -90,8 +136,10 @@ static void I2C_IRQHandler(
       {
          if(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR)
          {
-            UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-            uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+            // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
+            // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+            astTheI2CDevices[eController_].pstRegisters->SR1;
+            astTheI2CDevices[eController_].pstRegisters->SR2;
 
             astTheI2CDevices[eController_].eTransferState = I2CSTATE_IN_PROGRESS;
          }
@@ -157,26 +205,14 @@ static void I2C_IRQHandler(
    }
 }
 
-// -------------------------------------------------------------
-// I2C EV IRQ Vector Callbacks
-// -------------------------------------------------------------
-void I2C1_EV_IRQHandler(void)
-{
-   I2C_IRQHandler(I2C1);
-}
+//------------------------------------------------------------------------------
+void I2C1_EV_IRQHandler(void) { I2C_IRQHandler(I2C1); }
+void I2C2_EV_IRQHandler(void) { I2C_IRQHandler(I2C2); }
+void I2C3_EV_IRQHandler(void) { I2C_IRQHandler(I2C3); }
 
-void I2C2_EV_IRQHandler(void)
-{
-   I2C_IRQHandler(I2C2);
-}
-
-void I2C3_EV_IRQHandler(void)
-{
-   I2C_IRQHandler(I2C3);
-}
-
-// -------------------------------------------------------------
-BOOL I2C_Initialize(
+//------------------------------------------------------------------------------
+BOOL
+I2C_Initialize(
    I2CControllerEnum eController_)
 {
    BOOL bSuccess = FALSE;
@@ -213,15 +249,17 @@ BOOL I2C_Initialize(
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL I2C_Reset(
+//------------------------------------------------------------------------------
+BOOL
+I2C_Reset(
    I2CControllerEnum eController_)
 {
    return RCC_ResetPeripheralClock(I2CEnumToSTM32Enum(eController_));
 }
 
-// -------------------------------------------------------------
-BOOL I2C_Enable(
+//------------------------------------------------------------------------------
+BOOL
+I2C_Enable(
    I2CControllerEnum eController_)
 {
    if(astTheI2CDevices[eController_].pstRegisters == NULL)
@@ -233,8 +271,9 @@ BOOL I2C_Enable(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL I2C_Disable(
+//------------------------------------------------------------------------------
+BOOL
+I2C_Disable(
    I2CControllerEnum eController_)
 {
    if(astTheI2CDevices[eController_].pstRegisters == NULL)
@@ -246,8 +285,9 @@ BOOL I2C_Disable(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL I2C_SetConfig(
+//------------------------------------------------------------------------------
+BOOL
+I2C_SetConfig(
    I2CControllerEnum eController_,
    const I2CConfigurationStruct* pstConfiguration_)
 {
@@ -282,7 +322,7 @@ BOOL I2C_SetConfig(
    {
       case I2CCLK_SM_100KHZ:
       {
-         uiTRISEValue = (uiPCLK1Frequency/MSEC_TO_SEC) + 1;
+         uiTRISEValue = (uiPCLK1Frequency/SEC_TO_MSEC) + 1;
          // For Standard Mode:
          // T_high = T_low = CCR * T_PCLK1
          // T_high = (1/100kHz)/2 = 5us
@@ -296,7 +336,7 @@ BOOL I2C_SetConfig(
       case I2CCLK_FM_200KHZ:
       {
 
-         uiTRISEValue = ((uiPCLK1Frequency * 300)/NSEC_TO_SEC) + 1;
+         uiTRISEValue = ((uiPCLK1Frequency * 300)/SEC_TO_NSEC) + 1;
 
          if(pstConfiguration_->eDutyCycle == I2CDUTY_2)
          {
@@ -348,8 +388,9 @@ BOOL I2C_SetConfig(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-I2CConfigurationStruct* I2C_GetConfig(
+//------------------------------------------------------------------------------
+I2CConfigurationStruct*
+I2C_GetConfig(
    I2CControllerEnum eController_)
 {
    if(astTheI2CDevices[eController_].pstRegisters == NULL)
@@ -360,8 +401,9 @@ I2CConfigurationStruct* I2C_GetConfig(
    return &(astTheI2CDevices[eController_].stConfiguration);
 }
 
-// -------------------------------------------------------------
-BOOL I2C_WriteData(
+//------------------------------------------------------------------------------
+BOOL
+I2C_WriteData(
    I2CControllerEnum eController_,
    I2CModeEnum eMode_,
    UCHAR ucAddress_,
@@ -388,8 +430,10 @@ BOOL I2C_WriteData(
 
       // Ensure the address has been sent and clear the bit
       while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR));
-      UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-      uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+      // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
+      // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+      astTheI2CDevices[eController_].pstRegisters->SR1;
+      astTheI2CDevices[eController_].pstRegisters->SR2;
 
       // Write data
       while(uiLength_)
@@ -415,8 +459,9 @@ BOOL I2C_WriteData(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-BOOL I2C_ReadData(
+//------------------------------------------------------------------------------
+BOOL
+I2C_ReadData(
    I2CControllerEnum eController_,
    I2CModeEnum eMode_,
    UCHAR ucAddress_,
@@ -450,8 +495,10 @@ BOOL I2C_ReadData(
 
          // Ensure the address has been sent and clear the bit
          while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR));
-         UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-         uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+         // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
+         // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+         astTheI2CDevices[eController_].pstRegisters->SR1;
+         astTheI2CDevices[eController_].pstRegisters->SR2;
 
          // Write data
          while(uiCommandLength_)
@@ -481,8 +528,10 @@ BOOL I2C_ReadData(
 
       // Ensure the address has been sent and clear the bit
       while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR));
-      UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-      uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+      // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
+      // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
+      astTheI2CDevices[eController_].pstRegisters->SR1;
+      astTheI2CDevices[eController_].pstRegisters->SR2;
 
       // Enable ACK for received bytes
       astTheI2CDevices[eController_].pstRegisters->CR1 |= CR1_ACK;
@@ -513,8 +562,9 @@ BOOL I2C_ReadData(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-BOOL I2C_MasterTransfer(
+//------------------------------------------------------------------------------
+BOOL
+I2C_MasterTransfer(
    I2CControllerEnum eController_,
    I2CTransferTypeEnum eTransferType_,
    UCHAR ucAddress_,
@@ -551,15 +601,17 @@ BOOL I2C_MasterTransfer(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-I2CTransferStateEnum I2C_GetState(
+//------------------------------------------------------------------------------
+I2CTransferStateEnum
+I2C_GetState(
    I2CControllerEnum eController_)
 {
    return astTheI2CDevices[eController_].eTransferState;
 }
 
-// -------------------------------------------------------------
-BOOL I2C_ConfigureAsInterrupt(
+//------------------------------------------------------------------------------
+BOOL
+I2C_ConfigureAsInterrupt(
    I2CControllerEnum eController_)
 {
    if(astTheI2CDevices[eController_].pstRegisters == NULL)
