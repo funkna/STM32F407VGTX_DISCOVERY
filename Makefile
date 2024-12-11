@@ -26,8 +26,6 @@ INCLUDE_DIRECTORIES += bsp
 INCLUDE_DIRECTORIES += bsp/ext
 INCLUDE_DIRECTORIES += drivers
 INCLUDE_DIRECTORIES += inc
-INCLUDE_DIRECTORIES += inc/cortex_m4
-INCLUDE_DIRECTORIES += inc/stm32f407vgt6
 
 ###############################################################################
 # Compilation setup
@@ -52,7 +50,7 @@ C_OBJS   = $(C_SOURCE_FILES:.c=.o)
 ALL_OBJS = $(ASM_OBJS) $(C_OBJS)
 
 # Compile
-all: $(TARGET)
+build: $(TARGET)
 $(ASM_OBJS): %.o: %.s
 $(C_OBJS): %.o: %.c
 $(ALL_OBJS):
