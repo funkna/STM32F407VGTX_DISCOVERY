@@ -19,9 +19,9 @@
 #define I2C2_DEVICE_ADDRESS   (0x62)
 #define I2C3_DEVICE_ADDRESS   (0x63)
 
-//--------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! \brief I2C Controller Register Bitmasks
-//--------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define CR1_ACK               (0x01UL << 10) // Acknowledge enable
 #define CR1_STOP              (0x01UL << 9)  // Stop generation
 #define CR1_START             (0x01UL << 8)  // Start generation

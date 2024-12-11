@@ -24,10 +24,6 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-//! Statics, Externs & Globals
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
 //! \brief Transfer buffers description
 //------------------------------------------------------------------------------
 typedef struct
@@ -53,9 +49,9 @@ typedef struct
 //------------------------------------------------------------------------------
 //! Statics, Externs & Globals
 //------------------------------------------------------------------------------
-static I2CDeviceStruct astTheI2CDevices[I2C_MAX] = {NULL};
+static I2CDeviceStruct astTheI2CDevices[I2C_MAX] = {0};
 
-static GPIOConfigurationStruct stTheI2CPinConfig = {
+static const GPIOConfigurationStruct stTheI2CPinConfig = {
    GPIOMODE_ALT_FUNC,
    GPIOTYPE_OPENDRAIN,
    GPIOSPEED_HI,
@@ -136,8 +132,6 @@ I2C_IRQHandler(
       {
          if(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR)
          {
-            // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-            // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
             astTheI2CDevices[eController_].pstRegisters->SR1;
             astTheI2CDevices[eController_].pstRegisters->SR2;
 
@@ -430,8 +424,6 @@ I2C_WriteData(
 
       // Ensure the address has been sent and clear the bit
       while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR));
-      // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-      // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
       astTheI2CDevices[eController_].pstRegisters->SR1;
       astTheI2CDevices[eController_].pstRegisters->SR2;
 
@@ -495,8 +487,6 @@ I2C_ReadData(
 
          // Ensure the address has been sent and clear the bit
          while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR));
-         // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-         // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
          astTheI2CDevices[eController_].pstRegisters->SR1;
          astTheI2CDevices[eController_].pstRegisters->SR2;
 
@@ -528,8 +518,6 @@ I2C_ReadData(
 
       // Ensure the address has been sent and clear the bit
       while(!(astTheI2CDevices[eController_].pstRegisters->SR1 & SR1_ADDR));
-      // UINT uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR1;
-      // uiDummyRead = astTheI2CDevices[eController_].pstRegisters->SR2;
       astTheI2CDevices[eController_].pstRegisters->SR1;
       astTheI2CDevices[eController_].pstRegisters->SR2;
 
