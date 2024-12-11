@@ -1,12 +1,27 @@
-// Includes ---------------------------------------------------------------------------------------
-#include <string.h>
-#include "stm32f407vgt6/spi.h"
-#include "drivers/gpio_driver.h"
-#include "drivers/rcc_driver.h"
-#include "drivers/spi_driver.h"
+//------------------------------------------------------------------------------
+//! \file spi.h
+//! \brief Serial Peripheral Interface driver implementation.
+//------------------------------------------------------------------------------
 
-// Defines ----------------------------------------------------------------------------------------
-// Typedefs ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
+#include "gpio.h"
+#include "rcc.h"
+#include "spi.h"
+#include <string.h>
+
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! \brief Transfer buffers description
+//------------------------------------------------------------------------------
 typedef struct
 {
    UCHAR* pucTransmitBuffer;
@@ -17,6 +32,9 @@ typedef struct
    UINT uiRequestedBytes;
 } SPIBuffersStruct;
 
+//------------------------------------------------------------------------------
+//! \brief SPI Device description
+//------------------------------------------------------------------------------
 typedef struct
 {
    SPIRegistersStruct* pstRegisters;
@@ -25,7 +43,11 @@ typedef struct
    UCHAR ucSPIStates;
 } SPIDeviceStruct;
 
-// Statics, Externs & Globals ---------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
+static SPIDeviceStruct astTheSPIDevices[SPI_MAX] = {0};
+
 static const GPIOConfigurationStruct stTheSPIPinConfig = {
    GPIOMODE_ALT_FUNC,
    GPIOTYPE_PUSHPULL,
@@ -33,10 +55,10 @@ static const GPIOConfigurationStruct stTheSPIPinConfig = {
    GPIOPUPD_NONE,
    GPIOALTFUNC_AF5
 };
-static SPIDeviceStruct astTheSPIDevices[SPI_MAX] = {0};
 
-// Functions --------------------------------------------------------------------------------------
-static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
+//------------------------------------------------------------------------------
+static STM32F407VGT6_PeriperalEnum
+SPIEnumToSTM32Enum(
    SPIControllerEnum eController_)
 {
    switch(eController_)
@@ -60,7 +82,27 @@ static STM32F407VGT6_PeriperalEnum SPIEnumToSTM32Enum(
    }
 }
 
-// -------------------------------------------------------------
+//------------------------------------------------------------------------------
+static SPIRegistersStruct*
+GetSPIController(
+   SPIControllerEnum eController_)
+{
+   switch(eController_)
+   {
+      case SPI1:
+         return (SPIRegistersStruct*)PERIPHERAL_ADDRESS_SPI1;
+      case SPI2:
+         return (SPIRegistersStruct*)PERIPHERAL_ADDRESS_SPI2_I2S2;
+      case SPI3:
+         return (SPIRegistersStruct*)PERIPHERAL_ADDRESS_SPI3_I2S3;
+      default:
+         return NULL;
+   }
+}
+
+//------------------------------------------------------------------------------
+//! \brief IRQ Handler
+//------------------------------------------------------------------------------
 static void SPI_IRQHandler(
    SPIControllerEnum eController_)
 {
@@ -103,26 +145,14 @@ static void SPI_IRQHandler(
    // TODO: Error bits
 }
 
-// -------------------------------------------------------------
-// SPI IRQ Vector Callbacks
-// -------------------------------------------------------------
-void SPI1_IRQHandler(void)
-{
-   SPI_IRQHandler(SPI1);
-}
+//------------------------------------------------------------------------------
+void SPI1_IRQHandler(void) { SPI_IRQHandler(SPI1); }
+void SPI2_IRQHandler(void) { SPI_IRQHandler(SPI2); }
+void SPI3_IRQHandler(void) { SPI_IRQHandler(SPI3); }
 
-void SPI2_IRQHandler(void)
-{
-   SPI_IRQHandler(SPI2);
-}
-
-void SPI3_IRQHandler(void)
-{
-   SPI_IRQHandler(SPI3);
-}
-
-// -------------------------------------------------------------
-BOOL SPI_Initialize(
+//------------------------------------------------------------------------------
+BOOL
+SPI_Initialize(
    SPIControllerEnum eController_)
 {
    BOOL bSuccess = FALSE;
@@ -163,15 +193,17 @@ BOOL SPI_Initialize(
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL SPI_Reset(
+//------------------------------------------------------------------------------
+BOOL
+SPI_Reset(
    SPIControllerEnum eController_)
 {
    return RCC_ResetPeripheralClock(SPIEnumToSTM32Enum(eController_));
 }
 
-// -------------------------------------------------------------
-BOOL SPI_Enable(
+//------------------------------------------------------------------------------
+BOOL
+SPI_Enable(
    SPIControllerEnum eController_)
 {
    if(astTheSPIDevices[eController_].pstRegisters == NULL)
@@ -183,8 +215,9 @@ BOOL SPI_Enable(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL SPI_Disable(
+//------------------------------------------------------------------------------
+BOOL
+SPI_Disable(
    SPIControllerEnum eController_)
 {
    if(astTheSPIDevices[eController_].pstRegisters == NULL)
@@ -196,8 +229,9 @@ BOOL SPI_Disable(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL SPI_SetConfig(
+//------------------------------------------------------------------------------
+BOOL
+SPI_SetConfig(
    SPIControllerEnum eController_,
    const SPIConfigurationStruct* pstConfiguration_)
 {
@@ -238,28 +272,28 @@ BOOL SPI_SetConfig(
    // Clock prescalar division
    switch(pstConfiguration_->eClockPrescalar)
    {
-      case SPICLK_PRESCALARDIV_2:
+      case SPICLK_PRESCALERDIV_2:
          uiCR1Value |= (CR1_BR_PCLK_DIV2 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_4:
+      case SPICLK_PRESCALERDIV_4:
          uiCR1Value |= (CR1_BR_PCLK_DIV4 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_8:
+      case SPICLK_PRESCALERDIV_8:
          uiCR1Value |= (CR1_BR_PCLK_DIV8 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_16:
+      case SPICLK_PRESCALERDIV_16:
          uiCR1Value |= (CR1_BR_PCLK_DIV16 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_32:
+      case SPICLK_PRESCALERDIV_32:
          uiCR1Value |= (CR1_BR_PCLK_DIV32 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_64:
+      case SPICLK_PRESCALERDIV_64:
          uiCR1Value |= (CR1_BR_PCLK_DIV64 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_128:
+      case SPICLK_PRESCALERDIV_128:
          uiCR1Value |= (CR1_BR_PCLK_DIV128 << CR1_BR_OFFSET);
          break;
-      case SPICLK_PRESCALARDIV_256:
+      case SPICLK_PRESCALERDIV_256:
          uiCR1Value |= (CR1_BR_PCLK_DIV256 << CR1_BR_OFFSET);
          break;
    }
@@ -338,8 +372,9 @@ BOOL SPI_SetConfig(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-SPIConfigurationStruct* SPI_GetConfig(
+//------------------------------------------------------------------------------
+SPIConfigurationStruct*
+SPI_GetConfig(
    SPIControllerEnum eController_)
 {
    if(astTheSPIDevices[eController_].pstRegisters == NULL)
@@ -350,8 +385,9 @@ SPIConfigurationStruct* SPI_GetConfig(
    return &(astTheSPIDevices[eController_].stConfiguration);
 }
 
-// -------------------------------------------------------------
-BOOL SPI_ReadByte(
+//------------------------------------------------------------------------------
+BOOL
+SPI_ReadByte(
    SPIControllerEnum eController_,
    UCHAR* pucData_)
 {
@@ -369,8 +405,9 @@ BOOL SPI_ReadByte(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-BOOL SPI_WriteByte(
+//------------------------------------------------------------------------------
+BOOL
+SPI_WriteByte(
    SPIControllerEnum eController_,
    UCHAR ucData_)
 {
@@ -387,8 +424,9 @@ BOOL SPI_WriteByte(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-BOOL SPI_Transfer(
+//------------------------------------------------------------------------------
+BOOL
+SPI_Transfer(
    SPIControllerEnum eController_,
    UCHAR* pucReceiveBuffer_,
    UINT uiRequestedBytes_,
@@ -438,15 +476,17 @@ BOOL SPI_Transfer(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-SPITransferStateEnum SPI_GetStates(
+//------------------------------------------------------------------------------
+SPITransferStateEnum
+SPI_GetStates(
    SPIControllerEnum eController_)
 {
    return astTheSPIDevices[eController_].ucSPIStates;
 }
 
-// -------------------------------------------------------------
-BOOL SPI_ConfigureAsInterrupt(
+//------------------------------------------------------------------------------
+BOOL
+SPI_ConfigureAsInterrupt(
    SPIControllerEnum eController_)
 {
    if(astTheSPIDevices[eController_].pstRegisters == NULL)
