@@ -1,10 +1,20 @@
-// Includes ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! \file lcd_hd44780u.c
+//! \brief LCD device funcionality.
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
 #include <stdarg.h>
-#include "ext/hd44780u.h"
-#include "drivers/gpio_driver.h"
+#include <stdio.h>
+#include "lcd_hd44780u.h"
+#include "gpio.h"
 #include "time.h"
 
-// Defines ----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
 #define HD440780U_GPIO_PORT      (GPIO_PORT_D)
 #define HD440780U_PIN_RS         (GPIO_PIN_0)
 #define HD440780U_PIN_RW         (GPIO_PIN_1)
@@ -13,14 +23,26 @@
 #define HD440780U_PIN_D5         (GPIO_PIN_4)
 #define HD440780U_PIN_D6         (GPIO_PIN_5)
 #define HD440780U_PIN_D7         (GPIO_PIN_6)
-#define HD440780U_LINE_BUFFER    (16)
+#define HD440780U_LINE_BUFFER    (16U)
 
-// Typedefs ---------------------------------------------------------------------------------------
-// Statics, Externs & Globals ---------------------------------------------------------------------
-// Functions --------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
 
-// -------------------------------------------------------------
-static BOOL DataWrite4Bit(
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
+GPIOConfigurationStruct stTheLCDPinConfig = {
+   GPIOMODE_GP_OUTPUT,
+   GPIOTYPE_OPENDRAIN,
+   GPIOSPEED_VHI,
+   GPIOPUPD_NONE,
+   GPIOALTFUNC_AF0
+};
+
+//------------------------------------------------------------------------------
+static BOOL
+DataWrite4Bit(
    UCHAR ucNibble_)
 {
    BOOL bSuccess = TRUE;
@@ -36,25 +58,18 @@ static BOOL DataWrite4Bit(
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL HD440780U_Initialize()
+//------------------------------------------------------------------------------
+BOOL
+HD440780U_Initialize()
 {
-   GPIOConfigurationStruct stLCDPinConfig = {
-      GPIOMODE_GP_OUTPUT,
-      GPIOTYPE_OPENDRAIN,
-      GPIOSPEED_VHI,
-      GPIOPUPD_NONE,
-      GPIOALTFUNC_AF0
-   };
-
    BOOL bSuccess = TRUE;
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_RS, &stLCDPinConfig);
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_RW, &stLCDPinConfig);
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_E,  &stLCDPinConfig);
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D4, &stLCDPinConfig);
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D5, &stLCDPinConfig);
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D6, &stLCDPinConfig);
-   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D7, &stLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_RS, &stTheLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_RW, &stTheLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_E,  &stTheLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D4, &stTheLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D5, &stTheLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D6, &stTheLCDPinConfig);
+   bSuccess &= GPIO_SetConfig(HD440780U_GPIO_PORT, HD440780U_PIN_D7, &stTheLCDPinConfig);
 
    DelayMS(40);
 
@@ -80,8 +95,9 @@ BOOL HD440780U_Initialize()
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL HD440780U_SendCommand(
+//------------------------------------------------------------------------------
+BOOL
+HD440780U_SendCommand(
    UCHAR ucCommand_)
 {
    BOOL bSuccess = TRUE;
@@ -98,8 +114,9 @@ BOOL HD440780U_SendCommand(
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL HD440780U_WriteByte(
+//------------------------------------------------------------------------------
+BOOL
+HD440780U_WriteByte(
    UCHAR ucByte_)
 {
    BOOL bSuccess = TRUE;
@@ -116,10 +133,9 @@ BOOL HD440780U_WriteByte(
    return bSuccess;
 }
 
-
-
-// -------------------------------------------------------------
-void HD440780U_WriteString(
+//------------------------------------------------------------------------------
+void
+HD440780U_WriteString(
    HD440780ULineEnum eLine_,
    const SCHAR* szFormat_,
    ...)

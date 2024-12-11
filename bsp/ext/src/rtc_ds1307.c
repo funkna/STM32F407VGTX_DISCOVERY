@@ -1,8 +1,17 @@
-// Includes ---------------------------------------------------------------------------------------
-#include "ext/ds1307.h"
-#include "drivers/i2c_driver.h"
+//------------------------------------------------------------------------------
+//! \file rtc_ds1307.c
+//! \brief Real-Time Clock device functionality.
+//------------------------------------------------------------------------------
 
-// Defines ----------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
+#include "rtc_ds1307.h"
+#include "i2c.h"
+
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
 #define DS1307_SECONDS_CH           (0x01UL << 7) // DS1307_REG_ADDR_SECONDS
 #define DS1307_HOURS_12HR24HR       (0x01UL << 6) // DS1307_REG_ADDR_HOURS
 #define DS1307_HOURS_AMPM           (0x01UL << 5) // DS1307_REG_ADDR_HOURS
@@ -15,8 +24,13 @@
 #define CONVERT_TO_BCD(x)           ((x % 10) | ((x / 10) << BCD_TENS_SHIFT))
 #define CONVERT_FROM_BCD(x)         ((x & ((0x01 << BCD_TENS_SHIFT) - 1)) + ((x >> BCD_TENS_SHIFT) * 10))
 
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
 
-// Typedefs ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! \brief DS1307 device addresses
+//------------------------------------------------------------------------------
 typedef enum
 {
    DS1307_REG_ADDR_SECONDS = 0,
@@ -29,18 +43,19 @@ typedef enum
    DS1307_REG_ADDR_MAX
 } DS1307RegisterAddressEnum;
 
-// Statics, Externs & Globals ---------------------------------------------------------------------
-static I2CConfigurationStruct stTheDS1307I2CConfig = {
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
+static const I2CConfigurationStruct stTheDS1307I2CConfig = {
    I2C1_DEVICE_ADDRESS,
    I2CACK_ENABLE,
    I2CDUTY_NONE,
    I2CCLK_SM_100KHZ
 };
 
-// Functions --------------------------------------------------------------------------------------
-
-// -------------------------------------------------------------
-BOOL DS1307_Initialize()
+//------------------------------------------------------------------------------
+BOOL
+DS1307_Initialize()
 {
    BOOL bSuccess = TRUE;
    bSuccess &= I2C_Initialize(DS1307_I2C);
@@ -49,8 +64,9 @@ BOOL DS1307_Initialize()
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL DS1307_EnableTimeKeeping()
+//------------------------------------------------------------------------------
+BOOL
+DS1307_EnableTimeKeeping()
 {
    BOOL bSuccess = TRUE;
    UCHAR aucSetTimeAndDateCommandBuffer[2] = {DS1307_REG_ADDR_SECONDS, 0x00};
@@ -62,8 +78,9 @@ BOOL DS1307_EnableTimeKeeping()
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL DS1307_DisableTimeKeeping()
+//------------------------------------------------------------------------------
+BOOL
+DS1307_DisableTimeKeeping()
 {
    BOOL bSuccess = TRUE;
    UCHAR aucSetTimeAndDateCommandBuffer[2] = {DS1307_REG_ADDR_SECONDS, 0x00};
@@ -75,8 +92,9 @@ BOOL DS1307_DisableTimeKeeping()
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL DS1307_GetTimeAndDate(
+//------------------------------------------------------------------------------
+BOOL
+DS1307_GetTimeAndDate(
    DS1307TimeKeepingStruct* pstTimeAndDate_)
 {
    BOOL bSuccess = TRUE;
@@ -109,8 +127,9 @@ BOOL DS1307_GetTimeAndDate(
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL DS1307_SetTimeAndDate(
+//------------------------------------------------------------------------------
+BOOL
+DS1307_SetTimeAndDate(
    DS1307TimeKeepingStruct* pstTimeAndDate_)
 {
    BOOL bSuccess = TRUE;
