@@ -1,14 +1,29 @@
-// Includes ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! \file usart.c
+//! \brief Universal Synchronous Asynchronous Receiver Transmitter driver implementation.
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
 #include <string.h>
 #include "constants.h"
-#include "stm32f407vgt6/usart.h"
-#include "drivers/gpio_driver.h"
-#include "drivers/rcc_driver.h"
-#include "drivers/nvic_driver.h"
-#include "drivers/usart_driver.h"
+#include "gpio.h"
+#include "rcc.h"
+#include "nvic.h"
+#include "usart.h"
 
-// Defines ----------------------------------------------------------------------------------------
-// Typedefs ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! \brief Transfer buffers description
+//------------------------------------------------------------------------------
 typedef struct
 {
    UCHAR* pucDataBuffer;
@@ -16,6 +31,9 @@ typedef struct
    UINT uiDataBytes; // The current number of bytes received/transmitted.
 } USARTBufferStruct;
 
+//------------------------------------------------------------------------------
+//! \brief USART Device description
+//------------------------------------------------------------------------------
 typedef struct
 {
    USARTRegistersStruct* pstRegisters;
@@ -25,7 +43,11 @@ typedef struct
    UCHAR ucTransferStates;
 } USARTDeviceStruct;
 
-// Statics, Externs & Globals ---------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
+static USARTDeviceStruct astTheUSARTDevices[USART_MAX] = {0};
+
 static const GPIOConfigurationStruct stTheUSARTPinConfig = {
    GPIOMODE_ALT_FUNC,
    GPIOTYPE_PUSHPULL,
@@ -33,10 +55,10 @@ static const GPIOConfigurationStruct stTheUSARTPinConfig = {
    GPIOPUPD_NONE,
    GPIOALTFUNC_AF7
 };
-static USARTDeviceStruct astTheUSARTDevices[USART_MAX] = {0};
 
-// Functions --------------------------------------------------------------------------------------
-static STM32F407VGT6_PeriperalEnum USARTEnumToSTM32Enum(
+//------------------------------------------------------------------------------
+static STM32F407VGT6_PeriperalEnum
+USARTEnumToSTM32Enum(
    USARTControllerEnum eController_)
 {
    switch(eController_)
@@ -72,8 +94,35 @@ static STM32F407VGT6_PeriperalEnum USARTEnumToSTM32Enum(
    }
 }
 
-// -------------------------------------------------------------
-static void USART_IRQHandler(
+//------------------------------------------------------------------------------
+static USARTRegistersStruct*
+GetUSARTController(
+   USARTControllerEnum eController_)
+{
+   switch(eController_)
+   {
+      case USART1:
+         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART1;
+      case USART2:
+         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART2;
+      case USART3:
+         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART3;
+      case USART4:
+         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_UART4;
+      case USART5:
+         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_UART5;
+      case USART6:
+         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART6;
+      default:
+         return NULL;
+   }
+}
+
+//------------------------------------------------------------------------------
+//! \brief IRQ Handler
+//------------------------------------------------------------------------------
+static void
+USART_IRQHandler(
    USARTControllerEnum eController_)
 {
    if(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TXE)
@@ -103,26 +152,14 @@ static void USART_IRQHandler(
    }
 }
 
-// -------------------------------------------------------------
-// USART EV IRQ Vector Callbacks
-// -------------------------------------------------------------
-void USART1_IRQHandler(void)
-{
-   USART_IRQHandler(USART1);
-}
+//------------------------------------------------------------------------------
+void USART1_IRQHandler(void) { USART_IRQHandler(USART1); }
+void USART2_IRQHandler(void) { USART_IRQHandler(USART2); }
+void USART3_IRQHandler(void) { USART_IRQHandler(USART3); }
 
-void USART2_IRQHandler(void)
-{
-   USART_IRQHandler(USART2);
-}
-
-void USART3_IRQHandler(void)
-{
-   USART_IRQHandler(USART3);
-}
-
-// -------------------------------------------------------------
-BOOL USART_Initialize(
+//------------------------------------------------------------------------------
+BOOL
+USART_Initialize(
    USARTControllerEnum eController_)
 {
    BOOL bSuccess = FALSE;
@@ -168,15 +205,17 @@ BOOL USART_Initialize(
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL USART_Reset(
+//------------------------------------------------------------------------------
+BOOL
+USART_Reset(
    USARTControllerEnum eController_)
 {
    return RCC_ResetPeripheralClock(USARTEnumToSTM32Enum(eController_));
 }
 
-// -------------------------------------------------------------
-BOOL USART_Enable(
+//------------------------------------------------------------------------------
+BOOL
+USART_Enable(
    USARTControllerEnum eController_)
 {
    if(astTheUSARTDevices[eController_].pstRegisters == NULL)
@@ -188,8 +227,9 @@ BOOL USART_Enable(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL USART_Disable(
+//------------------------------------------------------------------------------
+BOOL
+USART_Disable(
    USARTControllerEnum eController_)
 {
    if(astTheUSARTDevices[eController_].pstRegisters == NULL)
@@ -201,15 +241,16 @@ BOOL USART_Disable(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL USART_SetConfig(
+//------------------------------------------------------------------------------
+BOOL
+USART_SetConfig(
    USARTControllerEnum eController_,
    const USARTConfigurationStruct* pstConfiguration_)
 {
    if((astTheUSARTDevices[eController_].pstRegisters == NULL) ||
       (pstConfiguration_ == NULL) ||
       // TODO: Check PCLK2 for USART1 & 6.
-      ((HSI_RC_CLK_FREQ_MHZ * MHZ_TO_HZ) != RCC_GetClockFrequency(CLKTYPE_PCLK1)))
+      ((HSI_RC_CLK_FREQ_MHZ * HZ_TO_MHZ) != RCC_GetClockFrequency(CLKTYPE_PCLK1)))
    {
       return FALSE;
    }
@@ -385,8 +426,9 @@ BOOL USART_SetConfig(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-USARTConfigurationStruct* USART_GetConfig(
+//------------------------------------------------------------------------------
+USARTConfigurationStruct*
+USART_GetConfig(
    USARTControllerEnum eController_)
 {
    if(astTheUSARTDevices[eController_].pstRegisters == NULL)
@@ -397,8 +439,9 @@ USARTConfigurationStruct* USART_GetConfig(
    return &(astTheUSARTDevices[eController_].stConfiguration);
 }
 
-// -------------------------------------------------------------
-BOOL USART_ReadData(
+//------------------------------------------------------------------------------
+BOOL
+USART_ReadData(
    USARTControllerEnum eController_,
    UCHAR* pucData_,
    UINT uiDataLength_)
@@ -420,8 +463,9 @@ BOOL USART_ReadData(
 	return FALSE;
 }
 
-// -------------------------------------------------------------
-BOOL USART_WriteData(
+//------------------------------------------------------------------------------
+BOOL
+USART_WriteData(
    USARTControllerEnum eController_,
    const UCHAR* pucData_,
    UINT uiDataLength_)
@@ -444,8 +488,9 @@ BOOL USART_WriteData(
    return TRUE;
 }
 
-// -------------------------------------------------------------
-BOOL USART_Transfer(
+//------------------------------------------------------------------------------
+BOOL
+USART_Transfer(
    USARTControllerEnum eController_,
    USARTTransferTypeEnum eTransferType_,
    UCHAR* pucBuffer_,
@@ -493,15 +538,17 @@ BOOL USART_Transfer(
    return FALSE;
 }
 
-// -------------------------------------------------------------
-USARTTransferStateEnum USART_GetStates(
+//------------------------------------------------------------------------------
+USARTTransferStateEnum
+USART_GetStates(
    USARTControllerEnum eController_)
 {
    return astTheUSARTDevices[eController_].ucTransferStates;
 }
 
-// -------------------------------------------------------------
-BOOL USART_ConfigureAsInterrupt(
+//------------------------------------------------------------------------------
+BOOL
+USART_ConfigureAsInterrupt(
    USARTControllerEnum eController_)
 {
    if(astTheUSARTDevices[eController_].pstRegisters == NULL)
