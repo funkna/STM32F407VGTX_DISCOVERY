@@ -1,10 +1,17 @@
-// Redundancy Prevention --------------------------------------------------------------------------
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
+//------------------------------------------------------------------------------
+//! \file constants.h
+//! \brief Common constants
+//------------------------------------------------------------------------------
+#ifndef __CONSTANTS_H
+#define __CONSTANTS_H
 
-// Defines ----------------------------------------------------------------------------------------
-#define MHZ_TO_HZ    (1000000)
-#define MSEC_TO_SEC  (1000000)
-#define NSEC_TO_SEC  (1000000000)
+//------------------------------------------------------------------------------
+// Unit conversions
+//------------------------------------------------------------------------------
+#define HZ_TO_KHZ    (1000)
+#define HZ_TO_MHZ    (1000000)
+#define SEC_TO_MSEC  (1000)
+#define SEC_TO_USEC  (1000000)
+#define SEC_TO_NSEC  (1000000000)
 
-#endif // CONSTANTS_H_
+#endif // __CONSTANTS_H
