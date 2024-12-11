@@ -1,21 +1,42 @@
-// Includes ---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! \file button.c
+//! \brief On-board button functionality.
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
 #include "button.h"
-#include "drivers/nvic_driver.h"
-#include "drivers/exti_driver.h"
-#include "drivers/gpio_driver.h"
-#include "drivers/syscfg_driver.h"
+#include "nvic.h"
+#include "exti.h"
+#include "gpio.h"
+#include "syscfg.h"
 
-// Defines ----------------------------------------------------------------------------------------
-// Typedefs ---------------------------------------------------------------------------------------
-// Statics, Externs & Globals ---------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! Defines
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Typedefs
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! Statics, Externs & Globals
+//------------------------------------------------------------------------------
 static void (*pfButtonInterruptCallback)(void) = NULL;
-static const GPIOConfigurationStruct stTheButtonGPIOConfig = {GPIOMODE_INPUT, GPIOTYPE_OPENDRAIN, GPIOSPEED_VHI, GPIOPUPD_NONE, GPIOALTFUNC_AF0};
 
-// Functions --------------------------------------------------------------------------------------
+static const GPIOConfigurationStruct stTheButtonGPIOConfig = {
+   GPIOMODE_INPUT,
+   GPIOTYPE_OPENDRAIN,
+   GPIOSPEED_VHI,
+   GPIOPUPD_NONE,
+   GPIOALTFUNC_AF0
+};
 
-// -------------------------------------------------------------
-// Handle the EXTI0 interrupt here, as it routed to the button.
-// -------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//! \brief IRQ Handler
+//------------------------------------------------------------------------------
 void EXTI0_IRQHandler(void)
 {
    EXTI_ClearPendingInterrupt(GPIO_PIN_0);
@@ -26,15 +47,16 @@ void EXTI0_IRQHandler(void)
    }
 }
 
-
-// -------------------------------------------------------------
-BOOL Button_Initialize()
+//------------------------------------------------------------------------------
+BOOL
+Button_Initialize()
 {
    return GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_0, &stTheButtonGPIOConfig);
 }
 
-// -------------------------------------------------------------
-BOOL Button_ConfigureAsInterrupt(
+//------------------------------------------------------------------------------
+BOOL
+Button_ConfigureAsInterrupt(
    ButtonActionEnum eAction_,
    void (*fpCallback_)(void))
 {
@@ -63,12 +85,13 @@ BOOL Button_ConfigureAsInterrupt(
    BOOL bSuccess = TRUE;
    bSuccess |= NVIC_ConfigureInterrupt(IRQ_VECTOR_EXTI0, IRQ_PRIORITY_0, IRQ_ENABLE);
    bSuccess |= SYSCFG_ConfigureEXTI(GPIO_PORT_A, GPIO_PIN_0);
-   bSuccess |= EXTI_EnableInterrupt(GPIO_PORT_A, GPIO_PIN_0, eEXTITrigger);
+   EXTI_EnableInterrupt(GPIO_PORT_A, GPIO_PIN_0, eEXTITrigger);
    return bSuccess;
 }
 
-// -------------------------------------------------------------
-BOOL Button_IsPressed()
+//------------------------------------------------------------------------------
+BOOL
+Button_IsPressed()
 {
    GPIOStateEnum eButtonState = GPIO_LO;
    BOOL bSuccess = GPIO_ReadPin(GPIO_PORT_A, GPIO_PIN_0, &eButtonState);
