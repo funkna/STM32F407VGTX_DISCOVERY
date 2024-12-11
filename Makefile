@@ -26,8 +26,6 @@ INCLUDE_DIRECTORIES += bsp
 INCLUDE_DIRECTORIES += bsp/ext
 INCLUDE_DIRECTORIES += drivers
 INCLUDE_DIRECTORIES += inc
-INCLUDE_DIRECTORIES += inc/cortex_m4
-INCLUDE_DIRECTORIES += inc/stm32f407vgt6
 
 ###############################################################################
 # Compilation setup
@@ -52,7 +50,7 @@ C_OBJS   = $(C_SOURCE_FILES:.c=.o)
 ALL_OBJS = $(ASM_OBJS) $(C_OBJS)
 
 # Compile
-all: $(TARGET)
+build: $(TARGET)
 $(ASM_OBJS): %.o: %.s
 $(C_OBJS): %.o: %.c
 $(ALL_OBJS):
@@ -64,11 +62,9 @@ $(ALL_OBJS):
 %.elf: $(ALL_OBJS)
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) $(LFLAGS) $(foreach obj, $(ALL_OBJS), $(OBJECT_DIR)/$(notdir $(obj))) -o $(BUILD_DIR)/$(notdir $@)
-
-# Clean
-clean:
-	@rmdir /S /Q $(BUILD_DIR)
+	@echo "Build complete."
 
 # Flash
 flash:
 	@openocd -s "C:/Program Files (x86)/OpenOCD/share/openocd/scripts" -f interface/stlink-v1.cfg -f target/stm32f4x.cfg -c "program $(BUILD_DIR)/$(TARGET) verify reset exit"
+	@echo "Flashing complete."

@@ -1,63 +1,56 @@
-// ------------------------------------------------------------------------------------------------
-// Author: Nathan Funk
-// Date: February 2024
-//
-// This project contains the source code for the STM32F407VGT6 Discovery Board, done in step with
-// the Master MCU Udemy Course:
-// https://www.udemy.com/course/mastering-microcontroller-with-peripheral-driver-development
-//
-// Documentation:
-// https://www.st.com/en/microcontrollers-microprocessors/stm32f407vg.html
-// https://www.st.com/en/evaluation-tools/stm32f4discovery.html
-// https://www.st.com/resource/en/programming_manual/pm0214-stm32-cortexm4-mcus-and-mpus-programming-manual-stmicroelectronics.pdf
-// ------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//! \file main.c
+//------------------------------------------------------------------------------
 
-// Drivers
-#include "drivers/nvic_driver.h"
-#include "drivers/exti_driver.h"
-#include "drivers/gpio_driver.h"
-#include "drivers/rcc_driver.h"
-#include "drivers/i2c_driver.h"
-#include "drivers/usart_driver.h"
-#include "drivers/syscfg_driver.h"
+//------------------------------------------------------------------------------
+//! Includes
+//------------------------------------------------------------------------------
+#include "nvic.h"
+#include "systick.h"
+#include "exti.h"
+#include "gpio.h"
+#include "rcc.h"
+#include "i2c.h"
+#include "usart.h"
+#include "syscfg.h"
 
-// APIs
 #include "button.h"
 #include "led.h"
+#include "time.h"
 
-static BOOL InitializeDriversAndAPI()
+//------------------------------------------------------------------------------
+static BOOL InitializeDrivers()
 {
-   BOOL bInitSuccess = TRUE;
+   RCC_Initialize();
+   SYSTICK_Initialize();
+   NVIC_Initialize();
+   EXTI_Initialize();
+   SYSCFG_Initialize();
 
-   // Initialize Drivers
-   bInitSuccess &= RCC_Initialize();
-   bInitSuccess &= SYSTICK_Initialize();
-   bInitSuccess &= NVIC_Initialize();
-   bInitSuccess &= EXTI_Initialize();
-   bInitSuccess &= SYSCFG_Initialize();
-   bInitSuccess &= GPIO_Initialize(GPIO_PORT_A); // Buttons
-   bInitSuccess &= GPIO_Initialize(GPIO_PORT_B); // I2C
-   bInitSuccess &= GPIO_Initialize(GPIO_PORT_D); // LEDs
-   bInitSuccess &= I2C_Initialize(I2C1);
-   bInitSuccess &= USART_Initialize(USART2);
+   return TRUE;
+}
 
-   // Initialize API
-   bInitSuccess &= LED_Initialize();
-   bInitSuccess &= Button_Initialize();
+//------------------------------------------------------------------------------
+static BOOL InitializeBSP()
+{
+   if(!Button_Initialize()) return FALSE;
+   if(!LED_Initialize()) return FALSE;
 
-   return bInitSuccess;
+   return TRUE;
 }
 
 
+//------------------------------------------------------------------------------
 int main(void)
 {
-   if(!InitializeDriversAndAPI())
-   {
-      LED_On(LED_RED);
-      while(TRUE);
-   }
+   if(!InitializeDrivers()) while(TRUE);
+   if(!InitializeBSP()) while(TRUE);
 
    while(TRUE)
    {
+      LED_On(LED_BLUE);
+      DelayMS(500);
+      LED_Off(LED_BLUE);
+      DelayMS(500);
    }
 }

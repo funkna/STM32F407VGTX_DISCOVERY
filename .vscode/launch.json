@@ -1,0 +1,16 @@
+{
+    "version": "0.0.0",
+    "configurations":
+    [
+        {
+            "name": "[OpenOCD] STM32F407VGT6_DISC1",
+            "configFiles": ["${workspaceRoot}/openocd.cfg"],
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceRoot}/build/STM32F407VGT6_DISC1.elf",
+            "request": "launch",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "type": "cortex-debug",
+        }
+    ]
+}
