@@ -48,8 +48,8 @@ typedef enum
 //! Functions
 //------------------------------------------------------------------------------
 void EXTI_Initialize();
-void EXTI_EnableInterrupt(GPIOPortEnum eController_, GPIOPinEnum ePin_, EXTITriggerEnum eMode_);
-void EXTI_DisableInterrupt(GPIOPortEnum eController_, GPIOPinEnum ePin_);
+BOOL EXTI_EnableInterrupt(GPIOPortEnum eController_, GPIOPinEnum ePin_, EXTITriggerEnum eMode_);
+BOOL EXTI_DisableInterrupt(GPIOPortEnum eController_, GPIOPinEnum ePin_);
 void EXTI_ClearPendingInterrupt(GPIOPinEnum ePin_);
 
 

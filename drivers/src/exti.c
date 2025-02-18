@@ -30,12 +30,17 @@ EXTI_Initialize()
 }
 
 //------------------------------------------------------------------------------
-void
+BOOL
 EXTI_EnableInterrupt(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_,
    EXTITriggerEnum eMode_)
 {
+   if(pstTheEXTIController == NULL)
+   {
+      return FALSE;
+   }
+
    switch(eMode_)
    {
       case EXTI_TRIGGER_RISE:
@@ -68,15 +73,16 @@ EXTI_EnableInterrupt(
          break;
       }
    }
+   return TRUE;
 }
 
 //--------------------------------------------------------------
-void
+BOOL
 EXTI_DisableInterrupt(
    GPIOPortEnum ePort_,
    GPIOPinEnum ePin_)
 {
-   EXTI_EnableInterrupt(ePort_, ePin_, EXTI_TRIGGER_NONE);
+   return EXTI_EnableInterrupt(ePort_, ePin_, EXTI_TRIGGER_NONE);
 }
 
 //--------------------------------------------------------------
