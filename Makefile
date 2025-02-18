@@ -62,11 +62,9 @@ $(ALL_OBJS):
 %.elf: $(ALL_OBJS)
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) $(LFLAGS) $(foreach obj, $(ALL_OBJS), $(OBJECT_DIR)/$(notdir $(obj))) -o $(BUILD_DIR)/$(notdir $@)
-
-# Clean
-clean:
-	@rmdir /S /Q $(BUILD_DIR)
+	@echo "Build complete."
 
 # Flash
 flash:
 	@openocd -s "C:/Program Files (x86)/OpenOCD/share/openocd/scripts" -f interface/stlink-v1.cfg -f target/stm32f4x.cfg -c "program $(BUILD_DIR)/$(TARGET) verify reset exit"
+	@echo "Flashing complete."

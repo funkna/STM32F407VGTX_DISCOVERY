@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks":
+    [
+        {
+            "label": "[STM32F407VGT6] build",
+            "command": "make",
+            "args":
+            [
+                "build"
+            ]
+        },
+        {
+            "label": "[STM32F407VGT6] flash",
+            "command": "make",
+            "args":
+            [
+                "flash"
+            ]
+        }
+    ]
+}
