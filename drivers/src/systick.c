@@ -42,5 +42,5 @@ SYSTICK_ClearTicks()
 UINT
 SYSTICK_GetTicks()
 {
-   return (UINT)(pstTheSYSTICKController->VAL & VAL_CURRENT_MASK);
+   return (pstTheSYSTICKController->VAL & VAL_CURRENT_MASK);
 }

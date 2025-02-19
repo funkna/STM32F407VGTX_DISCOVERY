@@ -14,8 +14,8 @@
 //------------------------------------------------------------------------------
 //! Defines
 //------------------------------------------------------------------------------
-#define TICKS_PER_MSEC (2000)
-#define ROLLOVER_TICKS (0xFFFFFF)
+#define TICKS_PER_MSEC (2000UL)
+#define ROLLOVER_TICKS (0x00FFFFFFUL)
 
 //------------------------------------------------------------------------------
 //! \brief SYSTICK Controller Register Bitmasks

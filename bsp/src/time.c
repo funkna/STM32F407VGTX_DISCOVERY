@@ -24,9 +24,18 @@
 //------------------------------------------------------------------------------
 void
 DelayMS(
-   ULONG ulTimeDelayMS_)
+   UINT uiTimeDelayMS_)
 {
-   SYSTICK_ClearTicks();
-   ULONG ulStartTicks = SYSTICK_GetTicks();
-   while(SYSTICK_GetTicks() > (ulStartTicks - (ulTimeDelayMS_ * TICKS_PER_MSEC)));
+   UINT uiDelayTicks = (uiTimeDelayMS_ * TICKS_PER_MSEC);
+   UINT uiStartTicks = SYSTICK_GetTicks();
+   UINT uiEndTicks = (uiStartTicks > uiDelayTicks) ? (uiStartTicks - uiDelayTicks) : (ROLLOVER_TICKS - (uiDelayTicks - uiStartTicks));
+
+   if(uiStartTicks > uiDelayTicks)
+   {
+      while(SYSTICK_GetTicks() > uiEndTicks);
+   }
+   else // SYSTICK will roll over in this delay
+   {
+      while((SYSTICK_GetTicks() > uiEndTicks) || (SYSTICK_GetTicks() < uiStartTicks));
+   }
 }
