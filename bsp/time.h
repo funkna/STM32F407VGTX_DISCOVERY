@@ -22,5 +22,6 @@
 //! Functions
 //------------------------------------------------------------------------------
 void DelayMS(UINT uiTimeDelayMS_);
+UINT TickDeltaToMS(UINT uiTicksFirst_, UINT uiTicksLast_);
 
 #endif // __TIME_H

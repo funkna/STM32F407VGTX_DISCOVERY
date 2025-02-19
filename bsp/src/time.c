@@ -39,3 +39,19 @@ DelayMS(
       while((SYSTICK_GetTicks() > uiEndTicks) || (SYSTICK_GetTicks() < uiStartTicks));
    }
 }
+
+//------------------------------------------------------------------------------
+UINT
+TickDeltaToMS(
+   UINT uiTicksFirst_,
+   UINT uiTicksLast_)
+{
+   if(uiTicksFirst_ > uiTicksLast_)
+   {
+      return ((uiTicksFirst_ - uiTicksLast_) / TICKS_PER_MSEC);
+   }
+   else
+   {
+      return ((ROLLOVER_TICKS - (uiTicksLast_ - uiTicksFirst_)) / TICKS_PER_MSEC);
+   }
+}
