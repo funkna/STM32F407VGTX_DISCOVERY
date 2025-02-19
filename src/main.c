@@ -19,7 +19,7 @@
 #include "time.h"
 
 //------------------------------------------------------------------------------
-static BOOL InitializeDrivers()
+static BOOL InitializeBSP()
 {
    RCC_Initialize();
    SYSTICK_Initialize();
@@ -27,12 +27,6 @@ static BOOL InitializeDrivers()
    EXTI_Initialize();
    SYSCFG_Initialize();
 
-   return TRUE;
-}
-
-//------------------------------------------------------------------------------
-static BOOL InitializeBSP()
-{
    if(!Button_Initialize()) return FALSE;
    if(!LED_Initialize()) return FALSE;
 
@@ -43,14 +37,19 @@ static BOOL InitializeBSP()
 //------------------------------------------------------------------------------
 int main(void)
 {
-   if(!InitializeDrivers()) while(TRUE);
    if(!InitializeBSP()) while(TRUE);
 
    while(TRUE)
    {
-      LED_On(LED_BLUE);
-      DelayMS(500);
-      LED_Off(LED_BLUE);
-      DelayMS(500);
+      if(Button_WasPressed(BUTTON_0))
+      {
+         Button_Acknowledge(BUTTON_0);
+         LED_Toggle(LED_BLUE);
+      }
+
+      Button_RunTask();
+      // LED_Toggle(LED_BLUE);
+
+      // DelayMS(1000);
    }
 }

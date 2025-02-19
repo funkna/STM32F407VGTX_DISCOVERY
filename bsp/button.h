@@ -19,29 +19,22 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-//! \brief Button action
-//------------------------------------------------------------------------------
-typedef enum
-{
-   BUTTON_PRESS,
-   BUTTON_RELEASE,
-   BUTTON_BOTH,
-   BUTTON_NONE
-} ButtonActionEnum;
-
-//------------------------------------------------------------------------------
 //! \brief Button type
 //------------------------------------------------------------------------------
 typedef enum
 {
-   BUTTON_USER
+   BUTTON_0,
+   BUTTON_MAX
 } ButtonTypeEnum;
 
 //------------------------------------------------------------------------------
 //! Functions
 //------------------------------------------------------------------------------
 BOOL Button_Initialize();
-BOOL Button_ConfigureAsInterrupt(ButtonActionEnum eAction_, void (*fpCallback_)(void));
-BOOL Button_IsPressed();
+BOOL Button_IsPressed(ButtonTypeEnum eButton_);
+BOOL Button_IsReleaed(ButtonTypeEnum eButton_);
+BOOL Button_WasPressed(ButtonTypeEnum eButton_);
+void Button_Acknowledge(ButtonTypeEnum eButton_);
+void Button_RunTask();
 
 #endif // __BUTTON_H
