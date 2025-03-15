@@ -38,115 +38,39 @@ typedef struct
 //------------------------------------------------------------------------------
 static GPIODeviceStruct astTheGPIODevices[GPIO_PORT_MAX];
 
-//------------------------------------------------------------------------------
-static STM32F407VGT6_PeriperalEnum
-GPIOEnumToSTM32Enum(
-   GPIOPortEnum ePort_)
-{
-   switch(ePort_)
-   {
-      case GPIO_PORT_A:
-      {
-         return PERIPHERAL_GPIOA;
-      }
-      case GPIO_PORT_B:
-      {
-         return PERIPHERAL_GPIOB;
-      }
-      case GPIO_PORT_C:
-      {
-         return PERIPHERAL_GPIOC;
-      }
-      case GPIO_PORT_D:
-      {
-         return PERIPHERAL_GPIOD;
-      }
-      case GPIO_PORT_E:
-      {
-         return PERIPHERAL_GPIOE;
-      }
-      case GPIO_PORT_F:
-      {
-         return PERIPHERAL_GPIOF;
-      }
-      case GPIO_PORT_G:
-      {
-         return PERIPHERAL_GPIOG;
-      }
-      case GPIO_PORT_H:
-      {
-         return PERIPHERAL_GPIOH;
-      }
-      case GPIO_PORT_I:
-      {
-         return PERIPHERAL_GPIOI;
-      }
-      default:
-      {
-         return PERIPHERAL_INVALID;
-      }
-   }
-}
+static STM32F407VGT6_PeriperalEnum aeTheGPIOPeripherals[GPIO_PORT_MAX] = {
+   PERIPHERAL_GPIOA,
+   PERIPHERAL_GPIOB,
+   PERIPHERAL_GPIOC,
+   PERIPHERAL_GPIOD,
+   PERIPHERAL_GPIOE,
+   PERIPHERAL_GPIOF,
+   PERIPHERAL_GPIOG,
+   PERIPHERAL_GPIOH,
+   PERIPHERAL_GPIOI
+};
 
-//------------------------------------------------------------------------------
-static GPIORegistersStruct*
-GetGPIOController(
-   GPIOPortEnum ePort_)
-{
-   switch(ePort_)
-   {
-      case GPIO_PORT_A:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOA;
-      }
-      case GPIO_PORT_B:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOB;
-      }
-      case GPIO_PORT_C:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOC;
-      }
-      case GPIO_PORT_D:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOD;
-      }
-      case GPIO_PORT_E:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOE;
-      }
-      case GPIO_PORT_F:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOF;
-      }
-      case GPIO_PORT_G:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOG;
-      }
-      case GPIO_PORT_H:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOH;
-      }
-      case GPIO_PORT_I:
-      {
-         return (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOI;
-      }
-      default:
-      {
-         return NULL;
-      }
-   }
-}
+static GPIORegistersStruct* apstTheGPIOControllers[GPIO_PORT_MAX] = {
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOA,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOB,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOC,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOD,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOE,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOF,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOG,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOH,
+   (GPIORegistersStruct*)PERIPHERAL_ADDRESS_GPIOI
+};
 
 //------------------------------------------------------------------------------
 BOOL
 GPIO_Initialize(
    GPIOPortEnum ePort_)
 {
-   astTheGPIODevices[ePort_].pstRegisters = GetGPIOController(ePort_);
+   astTheGPIODevices[ePort_].pstRegisters = apstTheGPIOControllers[ePort_];
    if(astTheGPIODevices[ePort_].pstRegisters != NULL)
    {
-      return RCC_EnablePeripheralClock(GPIOEnumToSTM32Enum(ePort_));
+      return RCC_EnablePeripheralClock(aeTheGPIOPeripherals[ePort_]);
    }
 
    return FALSE;
@@ -157,7 +81,7 @@ BOOL
 GPIO_Reset(
    GPIOPortEnum ePort_)
 {
-   return RCC_ResetPeripheralClock(GPIOEnumToSTM32Enum(ePort_));
+   return RCC_ResetPeripheralClock(aeTheGPIOPeripherals[ePort_]);
 }
 
 //------------------------------------------------------------------------------
@@ -196,15 +120,6 @@ GPIO_SetConfig(
    memcpy(&(astTheGPIODevices[ePort_].stConfiguration), pstConfiguration_, sizeof(GPIOConfigurationStruct));
 
    return TRUE;
-}
-
-//------------------------------------------------------------------------------
-GPIOConfigurationStruct*
-GPIO_GetConfig(
-   GPIOPortEnum ePort_,
-   GPIOPinEnum ePin_)
-{
-   return (astTheGPIODevices[ePort_].pstRegisters == NULL) ? NULL : &(astTheGPIODevices[ePort_].stConfiguration);
 }
 
 //------------------------------------------------------------------------------

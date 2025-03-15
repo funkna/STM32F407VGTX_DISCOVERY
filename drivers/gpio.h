@@ -136,7 +136,6 @@ typedef volatile struct
 BOOL GPIO_Initialize(GPIOPortEnum eGPIOPort_);
 BOOL GPIO_Reset(GPIOPortEnum eGPIOPort_);
 BOOL GPIO_SetConfig(GPIOPortEnum eGPIOPort_, GPIOPinEnum ePin_, const GPIOConfigurationStruct* pstConfiguration_);
-GPIOConfigurationStruct* GPIO_GetConfig(GPIOPortEnum eGPIOPort_, GPIOPinEnum ePin_);
 BOOL GPIO_ReadPin(GPIOPortEnum eGPIOPort_, GPIOPinEnum ePin_, GPIOStateEnum* peState_);
 BOOL GPIO_WritePin(GPIOPortEnum eGPIOPort_, GPIOPinEnum ePin_, GPIOStateEnum eState_);
 BOOL GPIO_TogglePin(GPIOPortEnum eGPIOPort_, GPIOPinEnum ePin_);
