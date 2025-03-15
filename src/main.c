@@ -5,16 +5,14 @@
 //------------------------------------------------------------------------------
 //! Includes
 //------------------------------------------------------------------------------
-#include "nvic.h"
-#include "systick.h"
 #include "exti.h"
-#include "gpio.h"
+#include "nvic.h"
 #include "rcc.h"
-#include "i2c.h"
-#include "usart.h"
 #include "syscfg.h"
+#include "systick.h"
 
 #include "button.h"
+#include "console.h"
 #include "led.h"
 #include "time.h"
 
@@ -28,6 +26,7 @@ static BOOL InitializeBSP()
    SYSCFG_Initialize();
 
    if(!Button_Initialize()) return FALSE;
+   if(!Console_Initialize()) return FALSE;
    if(!LED_Initialize()) return FALSE;
 
    return TRUE;
@@ -38,18 +37,19 @@ static BOOL InitializeBSP()
 int main(void)
 {
    if(!InitializeBSP()) while(TRUE);
+   Console_Printf("BSP Initialized.\r\n");
 
+   Console_Printf("STM32F407VGTX_DISCOVERY running.\r\n");
    while(TRUE)
    {
       if(Button_WasPressed(BUTTON_0))
       {
          Button_Acknowledge(BUTTON_0);
          LED_Toggle(LED_BLUE);
+         Console_Printf("Button pressed!\r\n");
       }
 
       Button_RunTask();
-      // LED_Toggle(LED_BLUE);
-
-      // DelayMS(1000);
+      ConsoleEcho_RunTask();
    }
 }

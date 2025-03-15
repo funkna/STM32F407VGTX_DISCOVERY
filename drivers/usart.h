@@ -75,7 +75,6 @@
 #define GTPR_PSC_OFFSET       (0)
 #define GTPR_PSC              (0xFFUL << GTPR_PSC_OFFSET)
 
-
 #define CR2_STOP_BITS_1       (0b00UL)
 #define CR2_STOP_BITS_0_5     (0b01UL)
 #define CR2_STOP_BITS_2       (0b10UL)
@@ -159,26 +158,6 @@ typedef struct
 } USARTConfigurationStruct;
 
 //------------------------------------------------------------------------------
-//! \brief USART Transfer Type
-//------------------------------------------------------------------------------
-typedef enum
-{
-   USARTTRANSFER_WRITE = 0,
-   USARTTRANSFER_READ
-} USARTTransferTypeEnum;
-
-//------------------------------------------------------------------------------
-//! \brief USART Transfer State
-//------------------------------------------------------------------------------
-typedef enum
-{
-   USARTSTATE_IDLE = 0x00,
-   USARTSTATE_TX_IN_PROGRESS = 0x01,
-   USARTSTATE_RX_IN_PROGRESS = 0x02,
-   USARTSTATE_ERROR = 0x04
-} USARTTransferStateEnum;
-
-//------------------------------------------------------------------------------
 //! \brief Universal Synchronous Asynchronous Receiver Transmitter Controller Register Structure
 //------------------------------------------------------------------------------
 typedef volatile struct
@@ -195,17 +174,11 @@ typedef volatile struct
 //------------------------------------------------------------------------------
 //! Functions
 //------------------------------------------------------------------------------
-BOOL USART_Initialize(USARTControllerEnum eController_);
+BOOL USART_Initialize(USARTControllerEnum eController_, const USARTConfigurationStruct* pstConfiguration_);
 BOOL USART_Reset(USARTControllerEnum eController_);
 BOOL USART_SetConfig(USARTControllerEnum eController_, const USARTConfigurationStruct* pstConfiguration_);
-USARTConfigurationStruct* USART_GetConfig(USARTControllerEnum eController_);
-BOOL USART_Enable(USARTControllerEnum eController_);
-BOOL USART_Disable(USARTControllerEnum eController_);
-BOOL USART_WriteData(USARTControllerEnum eController_, const UCHAR* pucData_, UINT uiDataLength_);
-BOOL USART_ReadData(USARTControllerEnum eController_, UCHAR* pucData_, UINT uiDataLength_);
-BOOL USART_Transfer(USARTControllerEnum eController_, USARTTransferTypeEnum eTransferType_, UCHAR* pucBuffer_, UINT uiSize_);
-UCHAR USART_GetStates(USARTControllerEnum eController_);
-BOOL USART_ConfigureAsInterrupt(USARTControllerEnum eController_);
+UINT USART_ReadData(USARTControllerEnum eController_, UCHAR* pucData_, UINT uiDataLength_);
+UINT USART_WriteData(USARTControllerEnum eController_, UCHAR* pucData_, UINT uiDataLength_);
 
 
 #endif // __USART_H

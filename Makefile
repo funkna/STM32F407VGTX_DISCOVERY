@@ -18,6 +18,7 @@ ASSEMBLY_FILES  = $(wildcard STM32F407VGT6.s)
 C_SOURCE_FILES  = $(wildcard bsp/src/*.c)
 C_SOURCE_FILES += $(wildcard bsp/ext/src/*.c)
 C_SOURCE_FILES += $(wildcard drivers/src/*.c)
+C_SOURCE_FILES += $(wildcard lib/src/*.c)
 C_SOURCE_FILES += $(wildcard src/*.c)
 C_SOURCE_FILES += $(wildcard src/sys/*.c)
 
@@ -26,6 +27,7 @@ INCLUDE_DIRECTORIES += bsp
 INCLUDE_DIRECTORIES += bsp/ext
 INCLUDE_DIRECTORIES += drivers
 INCLUDE_DIRECTORIES += inc
+INCLUDE_DIRECTORIES += lib
 
 ###############################################################################
 # Compilation setup

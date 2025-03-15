@@ -10,26 +10,18 @@
 #include "constants.h"
 #include "gpio.h"
 #include "rcc.h"
+#include "ringbuffer.h"
 #include "nvic.h"
 #include "usart.h"
 
 //------------------------------------------------------------------------------
 //! Defines
 //------------------------------------------------------------------------------
+#define USART_BUFFER_SIZE (256)
 
 //------------------------------------------------------------------------------
 //! Typedefs
 //------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-//! \brief Transfer buffers description
-//------------------------------------------------------------------------------
-typedef struct
-{
-   UCHAR* pucDataBuffer;
-   UINT uiDataBufferSize; // The size of the data to write or read.
-   UINT uiDataBytes; // The current number of bytes received/transmitted.
-} USARTBufferStruct;
 
 //------------------------------------------------------------------------------
 //! \brief USART Device description
@@ -38,9 +30,8 @@ typedef struct
 {
    USARTRegistersStruct* pstRegisters;
    USARTConfigurationStruct stConfiguration;
-   USARTBufferStruct stTxBuffer;
-   USARTBufferStruct stRxBuffer;
-   UCHAR ucTransferStates;
+   RingBufferStruct stTx;
+   RingBufferStruct stRx;
 } USARTDeviceStruct;
 
 //------------------------------------------------------------------------------
@@ -56,67 +47,23 @@ static const GPIOConfigurationStruct stTheUSARTPinConfig = {
    GPIOALTFUNC_AF7
 };
 
-//------------------------------------------------------------------------------
-static STM32F407VGT6_PeriperalEnum
-USARTEnumToSTM32Enum(
-   USARTControllerEnum eController_)
-{
-   switch(eController_)
-   {
-      case USART1:
-      {
-         return PERIPHERAL_USART1;
-      }
-      case USART2:
-      {
-         return PERIPHERAL_USART2;
-      }
-      case USART3:
-      {
-         return PERIPHERAL_USART3;
-      }
-      case USART4:
-      {
-         return PERIPHERAL_UART4;
-      }
-      case USART5:
-      {
-         return PERIPHERAL_UART5;
-      }
-      case USART6:
-      {
-         return PERIPHERAL_USART6;
-      }
-      default:
-      {
-         return PERIPHERAL_INVALID;
-      }
-   }
-}
+static STM32F407VGT6_PeriperalEnum aeUSARTPeripherals[USART_MAX] = {
+   PERIPHERAL_USART1,
+   PERIPHERAL_USART2,
+   PERIPHERAL_USART3,
+   PERIPHERAL_UART4,
+   PERIPHERAL_UART5,
+   PERIPHERAL_USART6
+};
 
-//------------------------------------------------------------------------------
-static USARTRegistersStruct*
-GetUSARTController(
-   USARTControllerEnum eController_)
-{
-   switch(eController_)
-   {
-      case USART1:
-         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART1;
-      case USART2:
-         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART2;
-      case USART3:
-         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART3;
-      case USART4:
-         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_UART4;
-      case USART5:
-         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_UART5;
-      case USART6:
-         return (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART6;
-      default:
-         return NULL;
-   }
-}
+static USARTRegistersStruct* apstUSARTControllers[USART_MAX] = {
+   (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART1,
+   (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART2,
+   (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART3,
+   (USARTRegistersStruct*)PERIPHERAL_ADDRESS_UART4,
+   (USARTRegistersStruct*)PERIPHERAL_ADDRESS_UART5,
+   (USARTRegistersStruct*)PERIPHERAL_ADDRESS_USART6
+};
 
 //------------------------------------------------------------------------------
 //! \brief IRQ Handler
@@ -125,29 +72,28 @@ static void
 USART_IRQHandler(
    USARTControllerEnum eController_)
 {
+   UCHAR ucDataByte = 0;
    if(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TXE)
    {
-      astTheUSARTDevices[eController_].pstRegisters->DR = *(astTheUSARTDevices[eController_].stTxBuffer.pucDataBuffer);
-      astTheUSARTDevices[eController_].stTxBuffer.pucDataBuffer++;
-      astTheUSARTDevices[eController_].stTxBuffer.uiDataBytes++;
+      if(RingBuffer_Dequeue(&(astTheUSARTDevices[eController_].stTx), &ucDataByte, 1))
+      {
+         astTheUSARTDevices[eController_].pstRegisters->DR = ucDataByte;
+      }
 
-      if(astTheUSARTDevices[eController_].stTxBuffer.uiDataBytes == astTheUSARTDevices[eController_].stTxBuffer.uiDataBufferSize)
+      if(RingBuffer_IsEmpty(&(astTheUSARTDevices[eController_].stTx)))
       {
          astTheUSARTDevices[eController_].pstRegisters->CR1 &= ~CR1_TXEIE;
-         astTheUSARTDevices[eController_].ucTransferStates &= ~USARTSTATE_TX_IN_PROGRESS;
       }
    }
 
    if(astTheUSARTDevices[eController_].pstRegisters->SR & SR_RXNE)
    {
-      *(astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer) = astTheUSARTDevices[eController_].pstRegisters->DR;
-      astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer++;
-      astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes++;
+      ucDataByte = astTheUSARTDevices[eController_].pstRegisters->DR;
+      (void)RingBuffer_Enqueue(&(astTheUSARTDevices[eController_].stRx), &ucDataByte, 1);
 
-      if(astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes == astTheUSARTDevices[eController_].stRxBuffer.uiDataBufferSize)
+      if(RingBuffer_IsFull(&(astTheUSARTDevices[eController_].stRx)))
       {
          astTheUSARTDevices[eController_].pstRegisters->CR1 &= ~CR1_RXNEIE;
-         astTheUSARTDevices[eController_].ucTransferStates &= ~USARTSTATE_RX_IN_PROGRESS;
       }
    }
 }
@@ -160,13 +106,14 @@ void USART3_IRQHandler(void) { USART_IRQHandler(USART3); }
 //------------------------------------------------------------------------------
 BOOL
 USART_Initialize(
-   USARTControllerEnum eController_)
+   USARTControllerEnum eController_,
+   const USARTConfigurationStruct* pstConfiguration_)
 {
    BOOL bSuccess = FALSE;
-   astTheUSARTDevices[eController_].pstRegisters = GetUSARTController(eController_);
+   astTheUSARTDevices[eController_].pstRegisters = apstUSARTControllers[eController_];
    if(astTheUSARTDevices[eController_].pstRegisters != NULL)
    {
-      bSuccess = RCC_EnablePeripheralClock(USARTEnumToSTM32Enum(eController_));
+      bSuccess = RCC_EnablePeripheralClock(aeUSARTPeripherals[eController_]);
    }
 
    if(bSuccess)
@@ -180,6 +127,7 @@ USART_Initialize(
             GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_10, &stTheUSARTPinConfig); // RX
             GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_11, &stTheUSARTPinConfig); // CTS
             GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_12, &stTheUSARTPinConfig); // RTS
+            NVIC_ConfigureInterrupt(IRQ_VECTOR_USART1, IRQ_PRIORITY_0, IRQ_ENABLE);
             break;
          }
          case USART2:
@@ -189,6 +137,7 @@ USART_Initialize(
             GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_2, &stTheUSARTPinConfig); // TX
             GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_3, &stTheUSARTPinConfig); // RX
             GPIO_SetConfig(GPIO_PORT_A, GPIO_PIN_4, &stTheUSARTPinConfig); // CK
+            NVIC_ConfigureInterrupt(IRQ_VECTOR_USART2, IRQ_PRIORITY_0, IRQ_ENABLE);
             break;
          }
          case USART3: // TODO: Fall-through for now
@@ -200,6 +149,11 @@ USART_Initialize(
             return FALSE;
          }
       }
+
+      USART_SetConfig(eController_, pstConfiguration_);
+
+      astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_UE;
+      astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_RXNEIE;
    }
 
    return bSuccess;
@@ -210,35 +164,36 @@ BOOL
 USART_Reset(
    USARTControllerEnum eController_)
 {
-   return RCC_ResetPeripheralClock(USARTEnumToSTM32Enum(eController_));
-}
-
-//------------------------------------------------------------------------------
-BOOL
-USART_Enable(
-   USARTControllerEnum eController_)
-{
    if(astTheUSARTDevices[eController_].pstRegisters == NULL)
    {
       return FALSE;
    }
 
-   astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_UE;
-   return TRUE;
-}
-
-//------------------------------------------------------------------------------
-BOOL
-USART_Disable(
-   USARTControllerEnum eController_)
-{
-   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   switch(eController_)
    {
-      return FALSE;
+      case USART1:
+      {
+         NVIC_ConfigureInterrupt(IRQ_VECTOR_USART1, IRQ_PRIORITY_0, IRQ_CLEAR);
+         break;
+      }
+      case USART2:
+      {
+         NVIC_ConfigureInterrupt(IRQ_VECTOR_USART2, IRQ_PRIORITY_0, IRQ_CLEAR);
+         break;
+      }
+      case USART3: // TODO: Fall-through for now
+      case USART4: // TODO: Fall-through for now
+      case USART5: // TODO: Fall-through for now
+      case USART6: // TODO: Fall-through for now
+      default:
+      {
+         return FALSE;
+      }
    }
 
    astTheUSARTDevices[eController_].pstRegisters->CR1 &= ~CR1_UE;
-   return TRUE;
+
+   return RCC_ResetPeripheralClock(aeUSARTPeripherals[eController_]);
 }
 
 //------------------------------------------------------------------------------
@@ -427,159 +382,39 @@ USART_SetConfig(
 }
 
 //------------------------------------------------------------------------------
-USARTConfigurationStruct*
-USART_GetConfig(
-   USARTControllerEnum eController_)
-{
-   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
-   {
-      return NULL;
-   }
-
-   return &(astTheUSARTDevices[eController_].stConfiguration);
-}
-
-//------------------------------------------------------------------------------
-BOOL
+UINT
 USART_ReadData(
    USARTControllerEnum eController_,
    UCHAR* pucData_,
    UINT uiDataLength_)
 {
-   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   if((astTheUSARTDevices[eController_].pstRegisters == NULL) ||
+      (uiDataLength_ > (USART_BUFFER_SIZE - astTheUSARTDevices[eController_].stRx.uiCount)))
    {
-      return FALSE;
+      return 0;
    }
 
-   for(UINT uiIndex = 0; uiIndex < uiDataLength_; uiIndex++)
-   {
-      while(!(astTheUSARTDevices[eController_].pstRegisters->SR & SR_RXNE));
-
-      *pucData_ = astTheUSARTDevices[eController_].pstRegisters->DR;
-
-      pucData_++;
-   }
-
-	return FALSE;
+   return RingBuffer_Dequeue(&(astTheUSARTDevices[eController_].stRx), pucData_, uiDataLength_);
 }
 
 //------------------------------------------------------------------------------
-BOOL
+UINT
 USART_WriteData(
    USARTControllerEnum eController_,
-   const UCHAR* pucData_,
+   UCHAR* pucData_,
    UINT uiDataLength_)
 {
-   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
+   if((astTheUSARTDevices[eController_].pstRegisters == NULL) ||
+      (uiDataLength_ > (USART_BUFFER_SIZE - astTheUSARTDevices[eController_].stTx.uiCount)))
    {
-      return FALSE;
+      return 0;
    }
 
-   for(UINT uiIndex = 0; uiIndex < uiDataLength_; uiIndex++)
+   UINT uiBytesAdded = RingBuffer_Enqueue(&(astTheUSARTDevices[eController_].stTx), pucData_, uiDataLength_);
+   if(uiBytesAdded)
    {
-      while(!(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TXE));
-
-      astTheUSARTDevices[eController_].pstRegisters->DR = *pucData_;
-      pucData_++;
+      astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_TXEIE;
    }
 
-   while(!(astTheUSARTDevices[eController_].pstRegisters->SR & SR_TC));
-
-   return TRUE;
+   return uiBytesAdded;
 }
-
-//------------------------------------------------------------------------------
-BOOL
-USART_Transfer(
-   USARTControllerEnum eController_,
-   USARTTransferTypeEnum eTransferType_,
-   UCHAR* pucBuffer_,
-   UINT uiSize_)
-{
-   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
-   {
-      return FALSE;
-   }
-
-   if(eTransferType_ == USARTTRANSFER_READ)
-   {
-      if(!(astTheUSARTDevices[eController_].ucTransferStates & USARTSTATE_RX_IN_PROGRESS))
-      {
-         astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer = pucBuffer_;
-         astTheUSARTDevices[eController_].stRxBuffer.uiDataBufferSize = uiSize_;
-         astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes = 0;
-
-         astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_RXNEIE;
-         astTheUSARTDevices[eController_].ucTransferStates |= USARTSTATE_RX_IN_PROGRESS;
-      }
-      else
-      {
-         return FALSE;
-      }
-   }
-
-   if(eTransferType_ == USARTTRANSFER_WRITE)
-   {
-      if(!(astTheUSARTDevices[eController_].ucTransferStates & USARTSTATE_TX_IN_PROGRESS))
-      {
-         astTheUSARTDevices[eController_].stRxBuffer.pucDataBuffer = pucBuffer_;
-         astTheUSARTDevices[eController_].stRxBuffer.uiDataBufferSize = uiSize_;
-         astTheUSARTDevices[eController_].stRxBuffer.uiDataBytes = 0;
-
-         astTheUSARTDevices[eController_].pstRegisters->CR1 |= CR1_TXEIE;
-         astTheUSARTDevices[eController_].ucTransferStates |= USARTSTATE_TX_IN_PROGRESS;
-      }
-      else
-      {
-         return FALSE;
-      }
-   }
-
-   return FALSE;
-}
-
-//------------------------------------------------------------------------------
-USARTTransferStateEnum
-USART_GetStates(
-   USARTControllerEnum eController_)
-{
-   return astTheUSARTDevices[eController_].ucTransferStates;
-}
-
-//------------------------------------------------------------------------------
-BOOL
-USART_ConfigureAsInterrupt(
-   USARTControllerEnum eController_)
-{
-   if(astTheUSARTDevices[eController_].pstRegisters == NULL)
-   {
-      return FALSE;
-   }
-
-   IRQVectorEnum eIRQVector = IRQ_VECTOR_MAX;
-   switch(eController_)
-   {
-      case USART1:
-      {
-         eIRQVector = IRQ_VECTOR_USART1;
-         break;
-      }
-      case USART2:
-      {
-         eIRQVector = IRQ_VECTOR_USART2;
-         break;
-      }
-      case USART3:
-      {
-         eIRQVector = IRQ_VECTOR_USART3;
-         break;
-      }
-      default:
-         return FALSE;
-   }
-
-   astTheUSARTDevices[eController_].ucTransferStates = USARTSTATE_IDLE;
-
-   return NVIC_ConfigureInterrupt(eIRQVector, IRQ_PRIORITY_0, IRQ_ENABLE);
-}
-

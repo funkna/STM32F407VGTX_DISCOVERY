@@ -81,4 +81,10 @@ typedef enum
    IRQ_VECTOR_MAX = 82
 } IRQVectorEnum;
 
+//------------------------------------------------------------------------------
+// Cortex-M4 CMSIS intrinsic functions.
+//------------------------------------------------------------------------------
+static inline void __enable_irq()  { asm volatile ("cpsie i"); }
+static inline void __disable_irq() { asm volatile ("cpsid i"); }
+
 #endif // __CORTEX_M4_H

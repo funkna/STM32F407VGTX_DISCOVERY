@@ -14,6 +14,8 @@
 //------------------------------------------------------------------------------
 //! Defines
 //------------------------------------------------------------------------------
+#define CONSOLE_BUFFER_SIZE   (256)
+#define CONSOLE_USART         (USART2)
 
 //------------------------------------------------------------------------------
 //! Typedefs
@@ -30,15 +32,14 @@ USARTConfigurationStruct stTheConsoleUSARTConfig = {
    USARTFLOWCTL_DISABLED
 };
 
+static UCHAR aucReadBuffer[CONSOLE_BUFFER_SIZE];
+static UCHAR aucWriteBuffer[CONSOLE_BUFFER_SIZE];
+
 //------------------------------------------------------------------------------
 BOOL
 Console_Initialize()
 {
-   BOOL bSuccess = TRUE;
-   bSuccess &= USART_Initialize(CONSOLE_USART);
-   bSuccess &= USART_SetConfig(CONSOLE_USART, &stTheConsoleUSARTConfig);
-   bSuccess &= USART_Enable(CONSOLE_USART);
-   return bSuccess;
+   return USART_Initialize(CONSOLE_USART, &stTheConsoleUSARTConfig);
 }
 
 //------------------------------------------------------------------------------
@@ -47,15 +48,21 @@ Console_Printf(
    const SCHAR* szFormat_,
    ...)
 {
-   static UCHAR aucBuffer[CONSOLE_BUFFER_SIZE];
-
    va_list stArgs;
    va_start(stArgs, szFormat_);
-   UINT uiBytesInBuffer = vsnprintf((SCHAR*)(&aucBuffer[0]), (CONSOLE_BUFFER_SIZE - 2), szFormat_, stArgs);
+   UINT uiBytesInBuffer = vsnprintf((SCHAR*)(&aucWriteBuffer[0]), CONSOLE_BUFFER_SIZE, szFormat_, stArgs);
    va_end(stArgs);
 
-   aucBuffer[uiBytesInBuffer++] = '\r';
-   aucBuffer[uiBytesInBuffer++] = '\n';
+   (void)USART_WriteData(CONSOLE_USART, &aucWriteBuffer[0], uiBytesInBuffer);
+}
 
-   USART_WriteData(CONSOLE_USART, aucBuffer, uiBytesInBuffer);
+//------------------------------------------------------------------------------
+void
+ConsoleEcho_RunTask()
+{
+   UINT uiEchoBytes = USART_ReadData(CONSOLE_USART, &aucReadBuffer[0], CONSOLE_BUFFER_SIZE);
+   if(uiEchoBytes > 0)
+   {
+      (void)USART_WriteData(CONSOLE_USART, &aucReadBuffer[0], uiEchoBytes);
+   }
 }
